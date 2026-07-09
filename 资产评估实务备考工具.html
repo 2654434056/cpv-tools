@@ -116,14 +116,14 @@ footer{text-align:center;color:var(--sub);font-size:12px;margin-top:30px;line-he
   <p class="sub" style="font-size:12.5px">真题来源：2021 / 2022 / 2024 考生回忆版 · 公式经真题标准答案交叉校验 · 数据本地内嵌，离线可用</p>
 
   <nav class="tabs">
-    <button data-view="calc" class="active">① 企业价值计算器</button>
-    <button data-view="bank">② 真题练习</button>
+    <button data-view="bank" class="active">② 真题练习</button>
+    <button data-view="calc">① 企业价值计算器</button>
     <button data-view="exam">③ 限时模考</button>
     <button data-view="heat">④ 考点热力图</button>
   </nav>
 
   <!-- ========== 计算器 ========== -->
-  <section class="view active" id="view-calc">
+  <section class="view" id="view-calc">
     <div class="card">
       <h2>企业价值评估计算器</h2>
       <p class="desc">覆盖实务（二）核心计算：CAPM / WACC / 股利折现(Gordon) / 经济利润 / P/E / EV·EBITDA。每步显示公式推导树，结果与历年真题标准答案一致。</p>
@@ -133,7 +133,7 @@ footer{text-align:center;color:var(--sub);font-size:12px;margin-top:30px;line-he
   </section>
 
   <!-- ========== 题库 ========== -->
-  <section class="view" id="view-bank">
+  <section class="view active" id="view-bank">
     <div class="card">
       <h2>真题练习</h2>
       <p class="desc">按科目 / 年份 / 题型 / 考点筛选，点击选项即时判分，可展开解析。做错自动进错题。</p>
@@ -415,6 +415,28 @@ function toast(msg){
   t.textContent=msg;t.style.opacity='1';
   clearTimeout(t._tm);t._tm=setTimeout(()=>{t.style.opacity='0';},1800);
 }
+function confirmDialog(title, message, onConfirm){
+  let ov=document.getElementById('__confirm');
+  if(!ov){
+    ov=document.createElement('div');ov.id='__confirm';
+    ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:10000;';
+    ov.innerHTML='<div style="background:#fff;border-radius:14px;max-width:360px;width:86%;padding:22px 22px 18px;box-shadow:0 12px 40px rgba(0,0,0,.25);font-family:inherit">'+
+      '<div id="__ct" style="font-size:16px;font-weight:700;color:#1f2733;margin-bottom:8px"></div>'+
+      '<div id="__cm" style="font-size:14px;color:#5b6472;line-height:1.55;margin-bottom:18px;white-space:pre-line"></div>'+
+      '<div style="display:flex;gap:10px;justify-content:flex-end">'+
+        '<button id="__cc" style="padding:8px 16px;border:1px solid #d8dde6;background:#fff;border-radius:8px;font-size:14px;cursor:pointer;color:#5b6472">取消</button>'+
+        '<button id="__cy" style="padding:8px 16px;border:none;background:#2f6fed;border-radius:8px;font-size:14px;cursor:pointer;color:#fff">确定</button>'+
+      '</div></div>';
+    document.body.appendChild(ov);
+  }
+  document.getElementById('__ct').textContent=title;
+  document.getElementById('__cm').textContent=message;
+  ov.style.display='flex';
+  const cy=document.getElementById('__cy'), cc=document.getElementById('__cc');
+  const cleanup=()=>{ov.style.display='none';cy.onclick=null;cc.onclick=null;};
+  cy.onclick=()=>{cleanup();if(onConfirm)onConfirm();};
+  cc.onclick=()=>{cleanup();};
+}
 function abortExam(){
   examState=null; if(examTimer)clearInterval(examTimer); examTimer=null;
   const s=document.getElementById('examSetup'), r=document.getElementById('examRun');
@@ -436,8 +458,8 @@ function initBankFilters(){
   fillSelect('fTopic',uniq(QUESTIONS.flatMap(q=>q.topics||[])).sort(),'全部考点');
   fillSelect('fSource',uniq(QUESTIONS.map(q=>q.source||'其他')),'全部来源');
   ['fSubject','fYear','fType','fTopic','fSource','fScope'].forEach(id=>document.getElementById(id).onchange=renderBank);
-  document.getElementById('mShuffle').onclick=()=>{bankShuffle=!bankShuffle;renderBank();};
-  document.getElementById('mReset').onclick=()=>{if(confirm('确定清空全部作答记录？'))clearAllRecords();};
+  document.getElementById('mShuffle').onclick=()=>{bankShuffle=!bankShuffle;renderBank();toast(bankShuffle?'已打乱题目顺序':'已恢复原始顺序');};
+  document.getElementById('mReset').onclick=()=>{confirmDialog('清空作答记录','确定清空全部作答记录？此操作不可撤销，所有做题进度将丢失。',()=>clearAllRecords());};
 }
 let bankShuffle=false;
 function filterQuestions(){
@@ -539,7 +561,7 @@ function startExam(){
   let pool=QUESTIONS.filter(q=>(!s||q.subject===s));
   if(scope==='objonly')pool=pool.filter(q=>q.type!=='综合');
   pool=[...pool].sort(()=>Math.random()-.5).slice(0,cnt);
-  if(!pool.length){alert('题目不足，换个条件');return;}
+  if(!pool.length){toast('题目不足，换个条件再试');return;}
   examState={questions:pool,picks:{},end:Date.now()+mins*60000,submitted:false};
   document.getElementById('examSetup').style.display='none';
   document.getElementById('examRun').style.display='block';
@@ -571,7 +593,7 @@ function renderExam(){
       <div class="stem">${esc(q.stem)}</div>${opts}</div>`;
   });
   document.getElementById('examRun').innerHTML=h;
-  document.getElementById('examSubmit').onclick=()=>{if(confirm('确定交卷？'))submitExam();};
+  document.getElementById('examSubmit').onclick=()=>{confirmDialog('交卷','确定交卷？交卷后将自动判分并生成成绩报告。',()=>submitExam());};
   const ab=document.getElementById('examAbort'); if(ab)ab.onclick=abortExam;
   st.questions.forEach(q=>{
     document.querySelectorAll(`[data-eq="${q.id}"]`).forEach(b=>b.onclick=()=>{
