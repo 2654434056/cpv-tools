@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>资产评估实务（一/二）备考工具</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+<style>
+:root{
+  --bg:#f5f6f8; --panel:#ffffff; --ink:#1f2430; --sub:#5b6472; --line:#e6e9ef;
+  --brand:#2a5bd7; --brand-soft:#eaf0ff; --ok:#1f9d55; --ok-soft:#e6f6ec;
+  --warn:#d9822b; --err:#d64545; --err-soft:#fdeaea; --gold:#b7791f;
+  --shadow:0 1px 3px rgba(20,30,60,.06),0 6px 24px rgba(20,30,60,.06);
+  --r:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",Segoe UI,Roboto,sans-serif;
+  line-height:1.6;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:24px 20px 80px}
+header.top{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:6px}
+header.top h1{font-size:22px;font-weight:700;letter-spacing:.3px}
+header.top .sub{color:var(--sub);font-size:13px}
+.badge{display:inline-flex;align-items:center;gap:5px;background:var(--brand-soft);color:var(--brand);
+  font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px}
+nav.tabs{display:flex;gap:6px;margin:18px 0 22px;background:var(--panel);padding:6px;
+  border-radius:var(--r);box-shadow:var(--shadow);position:sticky;top:12px;z-index:20;flex-wrap:wrap}
+nav.tabs button{flex:1;min-width:120px;border:none;background:transparent;color:var(--sub);
+  font-size:14px;font-weight:600;padding:11px 10px;border-radius:10px;cursor:pointer;transition:.18s}
+nav.tabs button:hover{color:var(--ink);background:var(--bg)}
+nav.tabs button.active{background:var(--brand);color:#fff;box-shadow:0 4px 12px rgba(42,91,215,.25)}
+.view{display:none;animation:fade .25s ease}
+.view.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.card{background:var(--panel);border-radius:var(--r);box-shadow:var(--shadow);padding:22px;margin-bottom:18px}
+.card h2{font-size:17px;margin-bottom:4px}
+.card .desc{color:var(--sub);font-size:13px;margin-bottom:16px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}nav.tabs{position:static}}
+label.f{display:block;font-size:13px;color:var(--sub);margin:10px 0 5px;font-weight:600}
+input[type=number],input[type=text],select{width:100%;padding:10px 12px;border:1px solid var(--line);
+  border-radius:9px;font-size:14px;background:#fbfcfe;color:var(--ink);transition:.15s}
+input:focus,select:focus{outline:none;border-color:var(--brand);background:#fff;box-shadow:0 0 0 3px var(--brand-soft)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:none;cursor:pointer;
+  font-size:14px;font-weight:600;padding:11px 18px;border-radius:10px;transition:.16s}
+.btn.primary{background:var(--brand);color:#fff}.btn.primary:hover{filter:brightness(1.06);transform:translateY(-1px)}
+.btn.ghost{background:var(--bg);color:var(--ink);border:1px solid var(--line)}.btn.ghost:hover{background:#eef1f6}
+.btn.sm{padding:7px 12px;font-size:13px}
+.result{margin-top:16px;background:var(--brand-soft);border:1px solid #d5e0ff;border-radius:12px;padding:16px}
+.result .big{font-size:26px;font-weight:800;color:var(--brand);letter-spacing:.5px}
+.result .big small{font-size:14px;font-weight:600;color:var(--sub);margin-left:4px}
+.tree{margin-top:14px;border-left:3px solid var(--brand);padding-left:0}
+.tree .step{position:relative;padding:9px 0 9px 20px;font-size:13.5px;color:var(--ink)}
+.tree .step:before{content:"";position:absolute;left:-7px;top:15px;width:11px;height:11px;border-radius:50%;
+  background:#fff;border:3px solid var(--brand)}
+.tree .step .lb{color:var(--sub);font-size:12px;display:block;margin-bottom:1px}
+.tree .step .fx{font-family:"SF Mono",Consolas,Menlo,monospace;font-size:13px;background:#fff;
+  display:inline-block;padding:2px 8px;border-radius:6px;border:1px solid var(--line);margin-top:2px}
+.tree .step.final .fx{background:var(--ok-soft);border-color:#bfe6cd;color:var(--ok);font-weight:700}
+.formula-note{font-size:12px;color:var(--sub);background:#fbfcfe;border:1px dashed var(--line);
+  border-radius:8px;padding:10px 12px;margin-top:12px}
+.calc-picker{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.calc-picker button{border:1px solid var(--line);background:var(--panel);color:var(--sub);font-size:13px;
+  font-weight:600;padding:8px 14px;border-radius:20px;cursor:pointer;transition:.15s}
+.calc-picker button:hover{border-color:var(--brand);color:var(--brand)}
+.calc-picker button.active{background:var(--brand);color:#fff;border-color:var(--brand)}
+/* 题库 */
+.filters{display:flex;gap:10px;flex-wrap:wrap;align-items:end;margin-bottom:8px}
+.filters .fitem{flex:1;min-width:130px}
+.stat-row{display:flex;gap:12px;flex-wrap:wrap;margin:14px 0}
+.stat{background:var(--panel);border-radius:12px;box-shadow:var(--shadow);padding:12px 16px;flex:1;min-width:110px;text-align:center}
+.stat .n{font-size:22px;font-weight:800;color:var(--brand)}
+.stat .l{font-size:12px;color:var(--sub);margin-top:2px}
+.q{background:var(--panel);border-radius:12px;box-shadow:var(--shadow);padding:18px;margin-bottom:14px}
+.q .meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.tag{font-size:11px;font-weight:600;padding:2px 8px;border-radius:12px;background:var(--bg);color:var(--sub)}
+.tag.y{background:#fff4e5;color:var(--warn)}.tag.t{background:var(--brand-soft);color:var(--brand)}
+.tag.tp{background:var(--ok-soft);color:var(--ok)}
+.q .stem{font-size:15px;font-weight:600;margin-bottom:12px;white-space:pre-wrap}
+.opt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fbfcfe;
+  border-radius:9px;padding:10px 13px;margin-bottom:8px;font-size:14px;cursor:pointer;transition:.14s}
+.opt:hover{border-color:var(--brand);background:#fff}
+.opt.sel{border-color:var(--brand);background:var(--brand-soft)}
+.opt.right{border-color:#bfe6cd;background:var(--ok-soft);color:var(--ok);font-weight:600}
+.opt.wrong{border-color:#f0c2c2;background:var(--err-soft);color:var(--err)}
+.q .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.analysis{margin-top:12px;background:#fbfcfe;border:1px solid var(--line);border-radius:10px;padding:13px;
+  font-size:13.5px;color:var(--ink);white-space:pre-wrap;display:none}
+.analysis.show{display:block}
+.analysis .ans{color:var(--ok);font-weight:700;margin-bottom:6px}
+.answer-box{margin-top:10px}
+.answer-box input{margin-bottom:8px}
+.empty{text-align:center;color:var(--sub);padding:40px;font-size:14px}
+.chart{width:100%;height:420px}
+.pill{display:inline-block;font-size:12px;padding:3px 10px;border-radius:20px;background:var(--brand-soft);color:var(--brand);font-weight:600;margin:2px}
+footer{text-align:center;color:var(--sub);font-size:12px;margin-top:30px;line-height:1.8}
+.kbd{font-family:monospace;background:#eef1f6;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:12px}
+.mode-toggle{display:flex;gap:6px;margin-bottom:14px}
+.mode-toggle button{border:1px solid var(--line);background:var(--panel);color:var(--sub);font-size:13px;font-weight:600;padding:7px 14px;border-radius:8px;cursor:pointer}
+.mode-toggle button.active{background:var(--ink);color:#fff;border-color:var(--ink)}
+.progress{height:8px;background:var(--bg);border-radius:5px;overflow:hidden;margin:10px 0}
+.progress>div{height:100%;background:var(--brand);width:0;transition:.3s}
+.scorecard{text-align:center;padding:24px}
+.scorecard .score{font-size:44px;font-weight:800;color:var(--brand)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>资产评估实务备考工具</h1>
+    <span class="badge">实务（一）·实务（二）</span>
+    <span class="sub" id="qcount">加载中…</span>
+  </header>
+  <p class="sub" style="font-size:12.5px">真题来源：2021 / 2022 / 2024 考生回忆版 · 公式经真题标准答案交叉校验 · 数据本地内嵌，离线可用</p>
+
+  <nav class="tabs">
+    <button data-view="calc" class="active">① 企业价值计算器</button>
+    <button data-view="bank">② 真题练习</button>
+    <button data-view="exam">③ 限时模考</button>
+    <button data-view="heat">④ 考点热力图</button>
+  </nav>
+
+  <!-- ========== 计算器 ========== -->
+  <section class="view active" id="view-calc">
+    <div class="card">
+      <h2>企业价值评估计算器</h2>
+      <p class="desc">覆盖实务（二）核心计算：CAPM / WACC / 股利折现(Gordon) / 经济利润 / P/E / EV·EBITDA。每步显示公式推导树，结果与历年真题标准答案一致。</p>
+      <div class="calc-picker" id="calcPicker"></div>
+      <div id="calcBody"></div>
+    </div>
+  </section>
+
+  <!-- ========== 题库 ========== -->
+  <section class="view" id="view-bank">
+    <div class="card">
+      <h2>真题练习</h2>
+      <p class="desc">按科目 / 年份 / 题型 / 考点筛选，点击选项即时判分，可展开解析。做错自动进错题。</p>
+      <div class="filters">
+        <div class="fitem"><label class="f">科目</label><select id="fSubject"></select></div>
+        <div class="fitem"><label class="f">年份</label><select id="fYear"></select></div>
+        <div class="fitem"><label class="f">题型</label><select id="fType"></select></div>
+        <div class="fitem"><label class="f">考点</label><select id="fTopic"></select></div>
+        <div class="fitem"><label class="f">范围</label><select id="fScope">
+          <option value="all">全部题目</option><option value="wrong">仅错题</option><option value="undone">未做题</option>
+        </select></div>
+      </div>
+      <div class="mode-toggle">
+        <button id="mShuffle" class="btn ghost sm">🔀 打乱顺序</button>
+        <button id="mReset" class="btn ghost sm">↺ 清空作答记录</button>
+      </div>
+      <div class="stat-row" id="bankStats"></div>
+    </div>
+    <div id="bankList"></div>
+  </section>
+
+  <!-- ========== 模考 ========== -->
+  <section class="view" id="view-exam">
+    <div class="card" id="examSetup">
+      <h2>限时模考</h2>
+      <p class="desc">从题库随机抽题组卷，倒计时作答，交卷后自动判分并生成成绩报告。</p>
+      <div class="grid2">
+        <div><label class="f">科目</label><select id="eSubject"></select></div>
+        <div><label class="f">题量</label><select id="eCount">
+          <option value="10">10 题</option><option value="20" selected>20 题</option><option value="30">30 题</option></select></div>
+        <div><label class="f">时长（分钟）</label><select id="eTime">
+          <option value="15">15 分钟</option><option value="30" selected>30 分钟</option><option value="45">45 分钟</option></select></div>
+        <div><label class="f">范围</label><select id="eScope">
+          <option value="objonly">仅客观题(单选/多选)</option><option value="all">含综合题</option></select></div>
+      </div>
+      <div style="margin-top:16px"><button class="btn primary" id="examStart">开始模考</button></div>
+    </div>
+    <div id="examRun" style="display:none"></div>
+  </section>
+
+  <!-- ========== 热力图 ========== -->
+  <section class="view" id="view-heat">
+    <div class="card">
+      <h2>考点分布热力图</h2>
+      <p class="desc">基于已收录真题的考点频次，一眼看出高频得分点。柱越长 / 色越深＝考得越多，优先攻克。</p>
+      <div class="mode-toggle">
+        <button class="btn ghost sm active" data-heat="实务二">实务（二）</button>
+        <button class="btn ghost sm" data-heat="实务一">实务（一）</button>
+      </div>
+      <div id="heatChart" class="chart"></div>
+    </div>
+    <div class="card">
+      <h2>题型 × 年份分布</h2>
+      <p class="desc">各年份收录题量与题型构成（注：2024 为考生回忆残卷，题量偏少）。</p>
+      <div id="yearChart" class="chart" style="height:340px"></div>
+    </div>
+  </section>
+
+  <footer>
+    资产评估实务备考工具 · 单文件离线版 · 仅供个人学习<br>
+    真题为考生回忆版，答案与解析以官方教材为准 · 公式已与真题标准答案交叉验证
+  </footer>
+</div>
+
+<script id="qdata" type="application/json">[{"year": 2021, "subject": "实务一", "type": "单选", "qnum": 1, "stem": "下列有关不动产登记信息的查询的说法中，错误的是（ ）。", "options": ["A.不动产权利人和利害关系人，均可查询不动产登记资料", "B.利害关系人可以依法复制不动产登记资料", "C.除了不动产权利人，任何人不能查询不动产登记资料", "D.不动产权利人查询登记资料的，需要提交查询申请书"], "answer": "C", "analysis": "不动产登记资料查询人包括：(1)不动产权利人；(2)不动产利害关系人；(3)不动产权利人、利害关系人委托的律师或者其他代理人；(4)有关国家机关。", "topics": ["房地产", "不动产登记"], "id": 1}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 2, "stem": "某公司持有A公司非上市普通股股票30000股，每股面值1元，历史5年内，该股票每年收益率均为10%。A公司经营稳定，市场情况良好，根据经营情况，评估人员判断其未来将稳定发展。假设折现率为8%，则所持A公司30000股股票的评估值为（ ）。", "options": ["A.24000元", "B.37500元", "C.30000元", "D.35000元"], "answer": "B", "analysis": "股票评估值＝（30000×1×10%）/8%＝37500（元）", "topics": ["金融资产", "收益法"], "id": 2}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 3, "stem": "矿业权评估，地质要素评序法中的价值指数的内涵是（ ）。", "options": ["A.反映价格变动水平", "B.反映勘查工作布置的合理性", "C.反映符合地质勘查规范要求的程度", "D.反映找矿潜力和矿产资源开发前景"], "answer": "D", "analysis": "地质要素评序法是将勘查成本效用法估算结果作为基础，然后采用反映找矿潜力和矿产资源开发前景的价值指数对其进行调整得出探矿权评估价值。价值指数反映了找矿潜力和矿产资源开发前景。", "topics": ["矿业权"], "id": 3}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 4, "stem": "市场法评估机器设备时，关于设备比较因素的归类，错误的是（ ）。", "options": ["A.生产能力属于个别因素（实物状况）", "B.交易数量属于交易因素", "C.出厂日期属于时间因素", "D.交易背景属于交易因素"], "answer": "C", "analysis": "出厂日期属于个别因素（实物状况），所以选项C的说法错误。生产能力属于个别因素（实物状况），所以选项A的说法正确。交易因素包括交易动机、交易背景和交易数量等，所以选项BD的说法正确。", "topics": ["机器设备", "市场法"], "id": 4}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 5, "stem": "建成区内已开发完成的宗地，采用成本逼近法评估土地价值时，设定待估宗地的开发程度至少应为（ ）。", "options": ["A.红线外通路、通上水、红线内土地平整", "B.红线外通路、通上水、通电、红线内土地平整", "C.红线外通路、通上水、排水、通电、通信、红线内土地平整", "D.红线外通路、通上水、排水、通电、红线内土地平整"], "answer": "B", "analysis": "属建成区内已开发完成的宗地，评估设定的开发程度最少应为宗地红线外通路、通上水、通电和宗地红线内土地平整。", "topics": ["房地产", "成本法"], "id": 5}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 6, "stem": "根据《珠宝首饰评估程序指导意见》，下列选项中属于单体珠宝首饰评估实物核查的内容的是（ ）。", "options": ["A.对珠宝首饰进行无损鉴定", "B.对珠宝首饰进行品质分析", "C.核查珠宝首饰实物状态", "D.对珠宝首饰进行描述记录"], "answer": "C", "analysis": "执行单体珠宝首饰评估业务，应当履行实物核查、鉴定和鉴定复核、品质和价值特征分析、描述记录等程序。实物核查中，应核查评估对象实物状态，完成委托样品确认或者交接，所以选项C的说法正确。选项A属于“鉴定和鉴定复核”，选项B属于“品质和价值特征分析”，选项D属于“描述记录”。", "topics": ["珠宝首饰"], "id": 6}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 7, "stem": "运用成本法评估在用低值易耗品时，关于重置全价确定的说法，错误的是（ ）。", "options": ["A.可按购置成本乘以相应价格指数确定", "B.价格变动大的，可按购置时市场价格确定", "C.价格变动不大的，可按购置成本确定", "D.可按现行市场价格确定"], "answer": "B", "analysis": "全新低值易耗品重置价值，可以直接采用其账面价值（在价格变动不大的情况下），也可以采用现行市场价格确定，有时还可以在账面价值基础上乘以其物价变动指数确定。", "topics": ["流动资产", "成本法"], "id": 7}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 8, "stem": "根据《人民法院委托评估工作规范》，关于评估机构是否接受委托的说法，正确的是（ ）。", "options": ["A.评估机构与当事人有利害关系，可以提出不接受委托评估申请", "B.评估人员不足，可以提出不接受委托评估申请", "C.评估程序受限，可以提出不接受委托评估申请", "D.评估资料缺乏，可以提出不接受委托评估申请"], "answer": "A", "analysis": "司法执行财产处置资产评估业务由人民法院发出评估委托书。除下列情形之一，不得拒绝委托：(1)资产评估机构及其资产评估师与当事人或者评估财产有利害关系；(2)资产评估机构已办理注销登记或者吊销营业执照；(3)依法不能进行评估的其他情形。具有上述情形者，可向人民法院说明情况，提出不承接委托评估申请。", "topics": ["评估规范", "司法评估"], "id": 8}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 9, "stem": "运用市场成交价比较法评估产前期经济林价值时，不作为修正调整因素的是（ ）。", "options": ["A.育林成本差异", "B.交易时间差异", "C.林木年龄差异", "D.林分质量差异"], "answer": "A", "analysis": "产前期经济林林木主要是营养生长，交易案例的调整系数除考虑待评估经济林资源资产与交易案例的时间差异外，还要考虑林分质量的差异以及林木年龄的差异。", "topics": ["森林资源", "市场法"], "id": 9}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 10, "stem": "关于金融不良资产评估的说法，错误的是（ ）。", "options": ["A.现场调查可以采用抽样方法", "B.应采用统一的方法对各类资产进行清查核实", "C.可以为金融机构防范和化解金融风险提供专业支持", "D.包括价值评估和价值分析两大业务类型"], "answer": "B", "analysis": "鉴于金融不良资产的特殊性，金融不良资产清查核实方法，应当充分考虑资产类型进行。评估实践中，一般分别按照实物类资产、股权类资产和其他资产，以及债权资产，分别采用不同的核实方法，查清资产的存在情况、形态和状态。", "topics": ["金融资产", "金融不良资产"], "id": 10}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 11, "stem": "某企业拥有一张期限为6个月的商业汇票，本金100万元，月息为0.5%。评估基准日距到期日尚有4个月，该应收票据评估值为（ ）。", "options": ["A.102万元", "B.103万元", "C.100万元", "D.101万元"], "answer": "D", "analysis": "应收票据评估值＝本金×（1＋利息率×时间）＝100×（1＋0.5%×2）＝101（万元）", "topics": ["流动资产", "应收票据"], "id": 11}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 12, "stem": "甲公司采用分期收款方式销售一条轿车车架生产线，长期应收款账面余额为1800万元，经计算预计未来现金流量现值为1000万元，该长期应收款的评估值为（ ）。", "options": ["A.1000万元", "B.2800万元", "C.800万元", "D.1800万元"], "answer": "A", "analysis": "如果预计未来现金流量现值低于账面值，证明发生了减值，则需要计提相应的减值准备，评估值为资产的账面值减记至预计未来现金流量现值，即1000万元。", "topics": ["金融资产"], "id": 12}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 13, "stem": "企业合并对价分摊评估中，关于无形资产评估方法的选用，错误的是（ ）。", "options": ["A.可以采用增量收益法", "B.可以采用许可费节省法", "C.应当首选市场法", "D.可以采用超额收益法"], "answer": "C", "analysis": "考虑到无形资产的特殊属性，在合并对价分摊评估中，无形资产最常用的评估方法为收益法。收益法下常用的具体方法包括增量收益法、许可费节省法、超额收益法，所以选项ABD的说法正确，选项C的说法错误。", "topics": ["无形资产", "收益法"], "id": 13}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 14, "stem": "关于金融不良资产评估对象的说法，错误的是（ ）。", "options": ["A.评估对象可能是用以实现债权清偿权利的股权", "B.评估对象可能是用以实现债权清偿权利的土地使用权", "C.评估对象可能是银行持有的损失类贷款", "D.评估对象可能是金融资产管理公司对外股权投资"], "answer": "D", "analysis": "金融不良资产评估业务的评估对象，应当由委托人根据拟处置情况确定。评估对象可能是债权资产，也可能是用以实现债权清偿权利的实物类资产、股权类资产和其他资产。对外股权投资不属于金融不良资产评估对象。", "topics": ["金融资产", "金融不良资产"], "id": 14}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 15, "stem": "运用成本法评估工业企业在产品时，成本项目不应包括（ ）。", "options": ["A.生产工人工资", "B.原材料成本", "C.销售人员工资", "D.生产线折旧费用"], "answer": "C", "analysis": "运用成本法评估企业在产品时，在产品成本包括材料、工资费用、制造费用和借款费用四部分，生产线折旧费用属于制造费用。销售人员工资属于销售费用，不计入在产品成本。", "topics": ["流动资产", "成本法"], "id": 15}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 16, "stem": "采用林地期望价法评估林地价值时，关于评估假设前提的说法，错误的是（ ）。", "options": ["A.森林永续利用", "B.每个轮伐期林地上收益相同", "C.每个轮伐期林地上支出相同", "D.从森林成熟期或盛产期开始计算净收益"], "answer": "D", "analysis": "林地期望价法以实现森林永续利用为前提，并假定每个轮伐期林地上的收益相同，支出也相同，从无林地造林开始进行计算，将无穷多个轮伐期的净收益全部折为现值累加求和作为拟评估林地资产评估值。", "topics": ["森林资源", "收益法"], "id": 16}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 17, "stem": "估算员工持股计划公允价值的评估方法是（ ）。", "options": ["A.市场法", "B.收益法", "C.成本法", "D.BS模型或Lattice模型"], "answer": "D", "analysis": "在评估实践中，员工持股计划的评估主要参考期权的评估方法，一般可以采用BS模型或Lattice模型计算员工持股计划的公允价值。", "topics": ["金融资产", "期权"], "id": 17}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 18, "stem": "已知楼面地价为4800元/平方米，容积率为4，则土地单价为（ ）。", "options": ["A.19200元/m²", "B.14400元/m²", "C.1200元/m²", "D.4800元/m²"], "answer": "A", "analysis": "土地单价＝楼面地价×容积率＝4800×4＝19200（元/平方米）", "topics": ["房地产", "成本法"], "id": 18}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 19, "stem": "应收账款账面余额已确定，则账面坏账准备确定思路为（ ）。", "options": ["A.按零确定", "B.按账面余值确定", "C.按预计坏账损失", "D.按已确定坏账损失"], "answer": "A", "analysis": "一般来说，应收账款评估以后，账面上的“坏账准备”科目按零值计算，评估结果中没有此项目。对应收账款评估时，是按照实际可收回的可能性进行的。", "topics": ["流动资产", "应收账款"], "id": 19}, {"year": 2021, "subject": "实务一", "type": "单选", "qnum": 20, "stem": "企业合并对价分摊评估中，关于评估对象的说法正确的是（ ）。", "options": ["A.评估对象是合并中取得的被购买方的股东权益", "B.评估对象是合并中取得的被购买方各项可辨认资产、负债及或有负债", "C.评估对象是合并中取得的被购买方的有形资产", "D.评估对象是合并中取得的被购买方的整体资产"], "answer": "B", "analysis": "合并对价分摊事项涉及的评估业务所对应的评估对象应当是合并中取得的被购买方各项可辨认资产、负债及或有负债。", "topics": ["无形资产", "合并对价分摊"], "id": 20}, {"year": 2021, "subject": "实务一", "type": "多选", "qnum": 1, "stem": "投资性房地产的最佳用途要求，具体所指方面有（ ）。", "options": ["A.相关制度是否完整", "B.财务上是否可行", "C.实物上是否可能", "D.法律上是否允许", "E.核算上是否规范"], "answer": "BCD", "analysis": "投资性房地产，最佳用途是指资产价值最大化时对应的用途，主要从法律上是否允许、实物上是否可能以及财务上是否可行等方面考虑。", "topics": ["房地产", "投资性房地产"], "id": 21}, {"year": 2021, "subject": "实务一", "type": "多选", "qnum": 2, "stem": "采用收益法评估不动产，估算不动产净收益时，需要扣除的费用项目通常包括（ ）。", "options": ["A.管理费", "B.维修费", "C.折旧费", "D.保险费", "E.房产税"], "answer": "ABDE", "analysis": "求取不动产净收益时的不动产总费用不包含折旧费（选项C不是答案），通常包括管理费、维修费、保险费、房产税等。", "topics": ["房地产", "收益法"], "id": 22}, {"year": 2021, "subject": "实务一", "type": "多选", "qnum": 3, "stem": "关于企业长期股权投资评估的说法，正确的有（ ）。", "options": ["A.应当关注被投资企业经营情况，当企业亏损时不采用收益法", "B.应当关注被投资单位的分红限制和清算约定对评估的影响", "C.应当关注被投资单位股东出资未到位情况及股权评估价值的计算", "D.应当关注被投资单位的可识别的账外资产和负债", "E.应当关注投资和被投资企业之间的产品销售等关联交易"], "answer": "BCDE", "analysis": "长期股权投资评估，应关注亏损企业采用收益法评估的适用性，亏损企业往往不能简单理解为收益法不适用；应关注公司章程或投资协议中的分红限制、清算约定和限售期等；关注各股东出资及出资到位情况；关注重要可识别的账外资产和负债；关注关联交易的影响。", "topics": ["长期股权投资"], "id": 23}, {"year": 2021, "subject": "实务一", "type": "综合", "qnum": 1, "stem": "某国有林场拟挂牌转让一块面积为400亩的杉木林，委托资产评估机构进行林木资产评估，评估基准日为2020年12月31日，评估人员经现场调查后，拟采用收获现值法进行评估，并收集到下列相关资料信息：（1）该林分年龄为20年，目前营林正常，平均蓄积量为15立方米/亩。（2）该林分经营目标为中径林，主伐年龄为25年，期间无需间伐，预计2025年末可完成主伐并实现全部收益。（3）与该林分同林龄的标准参照林的平均蓄积量为15立方米/亩，标准参照林分主伐时，平均蓄积量为20立方米/亩。（4）杉木林主伐时，林木纯收入约为500元/立方米。（5）后续每年营林成本均为50元/每亩。（6）投资收益率为8%，相应年限的现值系数、年金现值系数见题。（含三个小问：①列出森林资源资产评估应收集的主要权属证明文件；②简述用材林林木资产评估收获现值法的适用范围；③采用收获现值法计算该林分的林木资产评估值，计量单位万元，四舍五入取整。）", "options": [], "answer": "（1）林权证书（林权证、不动产权证、林木权证）。（2）收获现值法一般用于中龄林和近熟林的林木资产评估。（3）预测主伐时亩蓄积量＝K×林分主伐标准蓄积＝15/15×20＝20（立方米/亩）；评估值＝400×20×500/（1＋8%）^（25－20）－50×400×{1－（1＋8%）^[－（25－20）]}/8%＝2642478.59（元）≈264（万元）；或＝400×20×500×0.6806－50×400×3.9927＝2642546（元）≈264（万元）。", "analysis": "收获现值法用于中龄林和近熟林；本题收入在当年年末实现，折现期数为“25－20”而非“25－20＋1”，两种方法因四舍五入尾差均正确。", "topics": ["森林资源", "收益法", "收获现值法"], "id": 24}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 1, "stem": "关于机器设备评估中运杂费的说法，错误的是（ ）。", "options": ["A.进口设备的国内运杂费，一般以进口设备的离岸价乘以进口设备国内运杂费率计算", "B.国产设备的运杂费，可按照设备本体重置成本的一定比率计算", "C.国产设备的运杂费，可根据相应部门的运费计费标准计算", "D.进口设备的海外运费，可按照海运公司的收费标准计算，也可按设备的离岸价的一定比例计算"], "answer": "A", "analysis": "进口设备的国内运杂费，一般以进口设备的到岸价乘以进口设备国内运杂费率计算。因此，选项A的说法错误。", "topics": ["机器设备", "成本法"], "id": 25}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 2, "stem": "某工业企业2022年4月1日购进生产用A材料200千克，不含税单价500元/千克，2022年6月30日再次购进A材料100千克，不含税单价600元/千克。截至评估基准日2022年6月30日，A材料尚余150千克，不考虑其他因素影响，A材料的评估值为（ ）。", "options": ["A.90000元", "B.82500元", "C.85000元", "D.80000元"], "answer": "A", "analysis": "A材料的评估值＝150×600＝90000（元）", "topics": ["流动资产", "原材料"], "id": 26}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 3, "stem": "A公司持有非上市公司B公司普通股股票50万股，每股面值1元，采用权益法评估：经分析，评估基准日后第1年股利为6万元，未来股利增长率为2%，折现率为10%，该股票的评估值为（ ）。", "options": ["A.73.53万元", "B.75.00万元", "C.60.00万元", "D.50.00万元"], "answer": "B", "analysis": "该股票的评估值＝6/（10%－2%）＝75（万元）", "topics": ["金融资产", "收益法"], "id": 27}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 4, "stem": "某公司2022年1月1日从银行借入一笔短期借款用于补充营运周转资金，借款本金200万元，合同约定借款期限1年，年利率6%，到期一次性还本付息，该公司会计核算按月预提借款利息并计入应付利息，评估基准日为2022年3月31日，该笔短期借款评估值为（ ）。", "options": ["A.200万元", "B.203万元", "C.212万元", "D.209万元"], "answer": "A", "analysis": "短期借款评估。若企业短期借款利息采取预提方法，并按照会计制度的规定计入财务费用，则短期借款评估值为经核实后的短期借款金额。", "topics": ["流动资产", "短期借款"], "id": 28}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 5, "stem": "下列矿业权评估业务中，属于矿业权出让评估业务的是（ ）。", "options": ["A.拟收购采矿权，由购买方委托进行的矿业权评估", "B.拟申请探矿权，由自然资源厅委托进行的矿业权评估", "C.拟股权转让，由企业股东委托进行的涉矿矿业权评估", "D.拟抵押贷款，由矿业权人委托进行的涉矿矿业权评估"], "answer": "B", "analysis": "矿业权出让是基于所有权与使用权分离的一种授予机制，由矿产资源主管部门以招标、拍卖、挂牌、协议等方式依法向探矿权/采矿权申请人授予并收取矿业权价款的行为，即矿业权价款评估。选项B是答案，选项ACD均属于矿业权市场化评估。", "topics": ["矿业权"], "id": 29}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 6, "stem": "采用重置成本法对某车床进行评估，年限法成新率和观察法成新率分别为40%和43%，权重分别为40%和60%，则计算的综合成新率结果是（ ）。", "options": ["A.41.5%", "B.43%", "C.41.8%", "D.41.2%"], "answer": "C", "analysis": "综合成新率＝40%×40%＋43%×60%＝41.80%", "topics": ["机器设备", "成本法", "成新率"], "id": 30}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 7, "stem": "国有土地使用权出让年限应当符合法定年限，其中，工业用地的出让最高年限通常为（ ）。", "options": ["A.70年", "B.50年", "C.40年", "D.60年"], "answer": "B", "analysis": "国有土地使用权出让最高年限：居住用地70年；工业用地50年；教育、科技、文化、卫生、体育用地50年；商业、旅游、娱乐用地40年；综合或者其他用地50年。", "topics": ["房地产"], "id": 31}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 8, "stem": "关于机器设备评估对象和范围的说法，错误的是（ ）。", "options": ["A.某数控机床安装了专用的控制软件，软件不能纳入该设备的评估范围", "B.对已安装机器设备评估，其本体、设备基础和附属设施等都可以根据评估目的的情况对应纳入评估范围", "C.一条生产线可以作为机器设备组合进行评估", "D.船舶可以作为评估对象"], "answer": "A", "analysis": "评估人员在明确评估对象与范围时，应该与委托人确认：对于已安装的在用设备，是否包含设备基础、附属设施等；是否包括操作软件、技术数据和专利等无形资产。", "topics": ["机器设备"], "id": 32}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 9, "stem": "采用收益法评估不动产时，有租约限制的，关于租约期内租金确定的说法，正确的是（ ）。", "options": ["A.通常按正常客观的租金", "B.通常按租约的租金", "C.通常按历史平均的租金", "D.通常按历史的最高租金"], "answer": "B", "analysis": "运用收益法评估不动产时，有租约限制的，租约期内的租金宜采用租约所确定的租金，租约期外的租金应当采用正常客观的租金，并在评估报告中恰当披露租约情况。", "topics": ["房地产", "收益法"], "id": 33}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 10, "stem": "采用市场法评估已上市交易债券，关于评估值确定，正确的是（ ）。", "options": ["A.以评估基准日前20个交易日的收盘价平均值计算评估值", "B.以评估基准日前、后各10个交易日的收盘价平均值计算评估值", "C.以历史成本作为评估值", "D.以评估基准日的收盘价计算评估值"], "answer": "D", "analysis": "上市交易的债券一般采用市场法（现行市价）进行评估，按照评估基准日的收盘价确定评估值。", "topics": ["金融资产", "市场法"], "id": 34}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 11, "stem": "关于应收款项评估本质的说法，正确的是（ ）。", "options": ["A.是对账面余额的重新估计", "B.是对款项可回收金额的判断", "C.是对以往坏账损失的核实", "D.是对坏账准备的确认"], "answer": "B", "analysis": "应收款项评估的本质是对款项回收的“风险损失”和“未来回收价值现值”的判断，是“风险损失的预计”和“未来回收价值现值”的确定，而不是对应收账款账面记录的重新估计。", "topics": ["流动资产", "应收账款"], "id": 35}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 12, "stem": "选用收益法对不动产进行评估，需满足的前提条件通常不包括（ ）。", "options": ["A.未来建造成本可以预测", "B.未来预期收益所承担的风险可以预测并用货币计算", "C.未来收益可以预测并用货币计算", "D.未来获利年限可以预测"], "answer": "A", "analysis": "选用收益法评估，需要确定收益期限、折现率和收益期，选项A不属于收益法的参数。", "topics": ["房地产", "收益法"], "id": 36}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 13, "stem": "根据《珠宝首饰评估程序指导意见》，单体珠宝首饰评估，关于鉴定和鉴定复核的说法，错误的是（ ）。", "options": ["A.应采用现行国家标准对评估对象进行无损鉴定", "B.存疑样品，由双方共同认可的第三方机构进行样品鉴定", "C.对已有鉴定机构出具的鉴定、分级结论的评估对象，无需进行复核", "D.有损鉴定，需征得所有权人或委托人的书面许可"], "answer": "C", "analysis": "珠宝评估专业人员对已有鉴定机构出具鉴定、分级结论的评估对象，应当进行必要的实物鉴定、分级，并对已有鉴定、分级结论进行复核。", "topics": ["珠宝首饰"], "id": 37}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 14, "stem": "下列机器设备重置成本构成中，不属于直接成本的是（ ）。", "options": ["A.运杂费", "B.保险费", "C.安装费", "D.设备本体重置成本"], "answer": "B", "analysis": "直接成本包括设备本体重置成本、运杂费、安装费、基础费和其他合理成本。保险费、管理费、设计费和工程监理费等属于间接费用。", "topics": ["机器设备", "成本法"], "id": 38}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 15, "stem": "下列预算绩效管理对第三方服务的要求中，错误的是（ ）。", "options": ["A.要具有专业能力", "B.要随时与被评价单位交流评价结果", "C.要具有客观公正性", "D.要保持独立性"], "answer": "B", "analysis": "委托第三方参与预算绩效管理，应做到：保持独立性；具有专业能力；具有客观公正性；服务成果具有实用性；严格遵守职业道德规范。所以B不正确。", "topics": ["评估规范"], "id": 39}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 16, "stem": "某公司2015年10月购买一辆上海生产的别克GL8车，车型为2015款2.4L豪华商务尊享版，截至评估基准日2021年12月31日，该车已行驶85000公里，音响已损坏需要修理，采用直接比较法评估，下列较为合适的参照物是（ ）。", "options": ["A.别克GL8，2015款2.4L豪华商务尊享版，2015年10月购买，已行驶87000，音响完好", "B.别克GL8，2018款18T豪华版，2018年10月购买，已行驶85000公里，音响损坏", "C.奥德赛，2015款2.4L豪华版，2015年10月购买，已行驶85000公里，音响损坏", "D.别克GL8，2015款2.4L豪华商务尊享版，2018年10月购买，已行驶58000公里，音响损坏"], "answer": "A", "analysis": "参照物的选择考虑可比性以及差异的可修正性。B款式和排量不同，C车型不一样，修正难度大。A与可比对象的差异主要在音响和行驶里程方面（2000公里），音响影响易修正；D购买时间不同且里程差异大（29000公里）。故A最合适。", "topics": ["机器设备", "市场法"], "id": 40}, {"year": 2022, "subject": "实务一", "type": "单选", "qnum": 17, "stem": "采用市场法评估某不动产，评估对象各项比较因素指数均为100，可比实例A的区位因素指数为101，实物状况指数为105，权益状况指数为102，若不考虑其他因素影响，可比实例A的价格综合修正系数为（ ）。", "options": ["A.0.9245", "B.1.0267", "C.1.0817", "D.0.9740"], "answer": "A", "analysis": "可比实例A的价格综合修正系数＝100/101×100/105×100/102＝0.9245", "topics": ["房地产", "市场法"], "id": 41}, {"year": 2022, "subject": "实务一", "type": "多选", "qnum": 1, "stem": "对具有控股权的股权评估时，采用两种以上的评估方法对被投资单位进行整体评估的，确定被投资单位最终评估结论应重点考虑的事项有（ ）。", "options": ["A.以股权交易过程中预先设定的价格作为评估结论", "B.不同方法测算结果所依据的信息资料的质量和可靠性是否满足评估准则及作为出具评估报告依据的要求", "C.不同方法与评估目的及测算结果的用途是否匹配", "D.不同的企业特点与资产使用状况对不同方法测算结果的影响", "E.各种测评方法的评估范围及价值内涵是否一致"], "answer": "BCDE", "analysis": "评估人员在评价各种评估方法所得出的测算结果时，应重点考虑：①各种方法的评估范围及价值内涵是否一致；②不同方法与评估目的及测算结果的用途是否匹配；③不同的企业特点与资产使用状况对不同方法测算结果的影响；④不同方法测算结果所依据的信息资料的质量和可靠性。", "topics": ["长期股权投资"], "id": 42}, {"year": 2022, "subject": "实务一", "type": "多选", "qnum": 2, "stem": "采用成本法评估在用低值易耗品，关于成新率确定的说法，正确的是（ ）。", "options": ["A.一般不考虑经济性损耗", "B.会计核算采用一次性摊销的，成新率为0", "C.会计核算采用五五摊销的，成新率为50%", "D.应根据实际损耗程度确定", "E.一般不考虑功能性损耗"], "answer": "ADE", "analysis": "低值易耗品使用期限短于固定资产，一般不考虑功能性损耗和经济性损耗。低值易耗品的摊销在会计上采用简化方法，并不完全反映实际损耗程度；成新率应根据实际损耗程度确定，不能简单按摊销方式确定。", "topics": ["流动资产", "成本法"], "id": 43}, {"year": 2022, "subject": "实务一", "type": "多选", "qnum": 3, "stem": "下列投资基金类型中，属于证券投资基金的为（ ）。", "options": ["A.股票基金", "B.私募股权投资基金", "C.债券基金", "D.货币市场基金", "E.不动产投资基金"], "answer": "ACD", "analysis": "按照投资对象的不同，证券投资基金可分为债券基金、股票基金、货币市场基金和混合型基金等。私募股权投资基金和不动产投资基金属于另类投资基金。", "topics": ["金融资产"], "id": 44}, {"year": 2022, "subject": "实务一", "type": "多选", "qnum": 4, "stem": "采用成本法评估某进口设备，评估基准日设备的离岸价为1000万美元，海外运输费率为5%，海外运输保险费率为0.4%，关税税率为10%，银行财务费率为0.4%，美元对人民币汇率为1：6.95，下列计算结果中正确的是（ ）。", "options": ["A.海外运输保险费为4.00万美元", "B.关税为732.67万人民币", "C.银行财务费为4.00万美元", "D.海外运输费为50.00万美元", "E.设备到岸价为1054.20万美元"], "answer": "BCDE", "analysis": "海外运输保险费＝1000×（1＋5%）×0.4%＝4.20（万美元），A不正确。关税＝1000×（1＋5%）×（1＋0.4%）×6.95×10%＝732.67（万人民币）。银行财务费＝1000×0.4%＝4.00（万美元）。海外运输费＝1000×5%＝50.00（万美元）。设备到岸价＝1000×（1＋5%）×（1＋0.4%）＝1054.20（万美元）。", "topics": ["机器设备", "成本法"], "id": 45}, {"year": 2022, "subject": "实务一", "type": "多选", "qnum": 5, "stem": "某汽车生产用模具设计使用寿命为30万次，截至评估基准日已使用12万次，由于汽车行业竞争激烈，该模具对应的相关车型再生产8万辆就不再生产，故该模具只能再使用8万次，若该模具的更新重置成本为80万元，运营成本基本无变化，下列计算结果中，正确的有（ ）。", "options": ["A.综合成新率为60%", "B.经济性贬值为26.67万元", "C.功能性贬值为零", "D.实体性贬值为32万元", "E.评估值为48万元"], "answer": "BCD", "analysis": "行业竞争激烈导致经济性贬值，比设计使用次数减少10万次（30-12-8），经济性贬值率=（30-12-8）/30=1/3，经济性贬值额=80×1/3=26.67万元，B正确。更新重置成本不考虑第一种功能性贬值，运营成本基本无变化说明无第二种功能性贬值，功能性贬值为零，C正确。实体性贬值率=12/30=40%，实体性贬值额=40%×80=32万元，D正确。贬值额=32+26.67=58.67万元，评估值=80-58.67=21.33万元，综合成新率=26.67%，AE错误。", "topics": ["机器设备", "成本法", "实体性贬值", "经济性贬值", "功能性贬值"], "id": 46}, {"year": 2022, "subject": "实务一", "type": "多选", "qnum": 6, "stem": "不动产评估中，常用术语“五通一平”的内容包括（ ）。", "options": ["A.排水", "B.燃气", "C.供热", "D.供水", "E.通信"], "answer": "ADE", "analysis": "三通一平：通水、通电、通路及场地平整。五通一平：通路、通电、通信、供水、排水及场地平整。七通一平还包括燃气和供热。", "topics": ["房地产"], "id": 47}, {"year": 2022, "subject": "实务一", "type": "多选", "qnum": 7, "stem": "采用市场法对机械设备进行评估，下列比较因素中，属于交易因素的有（ ）。", "options": ["A.交易时点", "B.交易动机", "C.交易数量", "D.交易背景", "E.交易方式"], "answer": "BCDE", "analysis": "交易时点属于时间因素，A错误。设备的交易因素是指交易动机、背景等对价格的影响，交易数量也影响设备售价，教材原文在交易因素中未涉及交易方式，但交易方式也应属于交易因素内容，故BCDE正确。", "topics": ["机器设备", "市场法"], "id": 48}, {"year": 2022, "subject": "实务一", "type": "综合", "qnum": 1, "stem": "受疫情及外贸形势影响，某企业生产线开工率较低，会计师判断生产线存在减值迹象，企业委托资产评估机构进行减值测试目的评估，确定生产线2021年12月31日公允价值减处置费用的净额、预计未来现金流量的现值。经沟通，调整为对包含生产线的资产组进行减值测试。生产线设计使用年限25年，2021年末已使用3年，账面原值15000万元，账面净值13200万元；厂房及配套设施设计使用年限50年，2021年末已使用4年，账面原值8000万元，账面净值7360万元；均按直线法计提折旧，无残值。生产线配套营运资金100万元。企业管理层对2022年－2026年经营状况进行预测（销售收入、利润总额、息税前利润、折旧摊销、资本性支出、营运资金追加、税前现金流量见题表）。（含三个小问：①指出评估对象及其基准日账面价值；②说明评估公允价值减处置费用的净额和预计未来现金流的现值参数确定的差异；③以账面价值包括营运资金为基础，计算其预期未来现金流量现值。）", "options": [], "answer": "（1）评估对象为包含生产线、厂房及配套设施、配套营运资金的资产组；基准日账面价值＝13200＋7360＋100＝20660（万元）。（2）差异：①假设前提——公允净额可考虑将来可能重组/改良（应同时考虑收益与成本费用），现值以当前状态为基础不包括；②盈利预测——公允净额与市场参与者预期一致，现值以目前使用情况下可实现；③资本性支出——二者均含必要维护支出，公允净额还含改良/扩张相关；④营运资金——公允净额维持现有并考虑扩张/重组，现值基于现有管理模式；⑤所得税基础——公允净额可考虑税后，现值通常为税前。（3）未来5年收益现值＝1260×0.9091＋1420×0.8264＋1500×0.7513＋1550×0.6830＋1600×0.6209＝5497.99（万元）；第5年末资产组变现价值＝（13200＋7360－760×5）×70%＋（100＋40＋10＋10＋10）×100%＝11902（万元）；变现价值现值＝11902×0.6209＝7389.95；预期未来现金流量现值＝5497.99＋7389.95＝12887.94（万元）。", "analysis": "资产组减值测试需比较公允价值减处置费用净额与预计未来现金流量现值；生产线为定制设备无类似市场，故调整为资产组评估。", "topics": ["机器设备", "收益法", "资产组减值"], "id": 49}, {"year": 2022, "subject": "实务一", "type": "综合", "qnum": 2, "stem": "某资产评估机构接受委托对一拟转让林木资产进行评估。拟转让林木资产为幼龄林，林木小班面积20公顷，林分年龄（n）为3，株数保存率（r）为88%，林地所在地区规定的造林成活率（R）为80%，树高调整系数（K2）为0.92。确定采用重置成本法评估。该地区第一年造林投资5000元/公顷，第二、三年均为2000元/公顷，年投资收益率10%，林地年租金1000元/公顷，每年管护费500元/公顷。（含四个小问：①简述幼龄林价值评估中林木核查的主要内容；②指出适用重置成本法评估的用材林类型及使用前提；③计算幼龄林的林分质量综合调整系数；④计算各年单位生产成本及林木资产的评估值，四舍五入保留两位小数。）", "options": [], "answer": "（1）幼龄林（含未成林造林地）应核查：起源、树种组成、林龄、造林成活率、造林保存率、单位面积株数、平均胸径、平均树高、蓄积量、林木生长状态、病虫害及自然灾害损失、立地等级、地利条件等。（2）适用重置成本法的用材林类型为幼龄林林木；前提：①营造林成本投入可取且指标清晰；②具有相关树种营造林技术规程；③确定合理投资收益率。（3）株数保存率88%>成活率80%，K1＝1；K2＝0.92；综合调整系数＝K1×K2＝0.92。（4）第一年单位生产成本＝5000＋1000＋500＝6500（元/公顷）；第二年＝2000＋1000＋500＝3500；第三年＝3500；评估值＝[6500×1.331＋3500×1.21＋3500×1.1]×20×0.92＝307951.6（元）。", "analysis": "幼龄林采用重置成本法，综合调整系数由株数调整系数与树高调整系数相乘得到。", "topics": ["森林资源", "成本法", "重置成本法"], "id": 50}, {"year": 2024, "subject": "实务一", "type": "单选", "qnum": 1, "stem": "根据不动产登记现行有关规定，不动产抵押权登记事项，不动产登记机构向申请人核发的是（ ）。", "options": ["A.房屋他项权利证书", "B.不动产登记证明", "C.不动产权证书", "D.不动产登记簿"], "answer": "B", "analysis": "根据《不动产登记暂行条例实施细则》，抵押权登记、地役权登记和预告登记、异议登记，不动产登记机构仅向申请人核发不动产登记证明（不动产统一登记制度实施前核发的是房屋他项权利证书）。", "topics": ["房地产", "不动产登记"], "id": 51}, {"year": 2024, "subject": "实务一", "type": "单选", "qnum": 2, "stem": "某基金持有的三只股票的数量分别为50万股、60万股和100万股，评估基准日收盘价分别为18元/股、22元/股和15元/股。应付未付管理费1000万元，应交未交税费200万元，已售出的基金份额1000万份，则单位基金份额净值为（ ）。", "options": ["A.3.52元", "B.3.72元", "C.4.52元", "D.2.52元"], "answer": "D", "analysis": "单位基金份额净值＝［（50×18＋60×22＋100×15）－1000－200］/1000＝2.52（元）", "topics": ["金融资产", "基金"], "id": 52}, {"year": 2024, "subject": "实务一", "type": "单选", "qnum": 3, "stem": "根据森林采伐现行有关规定，下列说法错误的是（ ）。", "options": ["A.采伐自然保护区以外的竹林不需要申请采伐许可证，但应当符合林木采伐技术规程", "B.农村居民采伐自留地和房前屋后个人所有的零星林木，由乡镇人民政府核发采伐许可证", "C.农民居民采伐自留山和个人承包集体林地上的林木，由县级人民政府林业主管部门或者其委托的乡镇人民政府核发采伐许可证", "D.采伐林地上的林木应当申请采伐许可证，并按照采伐许可证的规定进行采伐"], "answer": "B", "analysis": "农村居民采伐自留地和房前屋后个人所有的零星林木，不需要申请采伐许可证。所以选项B的说法错误。", "topics": ["森林资源"], "id": 53}, {"year": 2024, "subject": "实务一", "type": "单选", "qnum": 4, "stem": "与其他单项资产评估成本法相比，矿业权评估成本法具有一定的特点。下列说法中错误的是（ ）。", "options": ["A.完整的、可靠的地质勘查报告是采用成本法评估矿业权的条件", "B.需要根据地质勘查规范，评判勘查工作布置的合理性、必要性和使用效果", "C.需要确定体现找矿潜力和矿产资源开发前景的效用系数，以其调整勘查成本得出评估值", "D.需要考虑勘查工作成本是否符合地质勘查规范要求"], "answer": "C", "analysis": "效用系数，反映勘查工作是否符合相关矿种地质勘查规范要求以及勘查工作布置的合理性。价值指数，反映了找矿潜力和矿产资源开发前景。因此选项C的说法错误。", "topics": ["矿业权", "成本法"], "id": 54}, {"year": 2024, "subject": "实务一", "type": "单选", "qnum": 5, "stem": "采用成本逼近法，评估土地使用权，关于利息计算，错误的是（ ）。", "options": ["A.只对土地取得费用和土地开发费用计算利息", "B.土地取得费用的计息期，为整个开发期和销售期", "C.土地开发费用若均匀投入，计息期按开发期除以2计算", "D.按照设定的土地开发程度的正常开发期计算利息"], "answer": "A", "analysis": "土地开发总投资包括土地取得费用、土地开发费用和各项税费。按照设定的土地开发程度的正常开发周期、各项费用的投入期限和贷款年利率，分别测算各期投入应支付的利息。因此选项A的说法错误。", "topics": ["房地产", "成本法"], "id": 55}, {"year": 2024, "subject": "实务一", "type": "单选", "qnum": 6, "stem": "某企业在产品A实有数量300件，根据其完成工序与全部工序比例确定的完工率为60%，完工成其产成品单位重置成本为5元/件，则该在产品的评估值为（ ）。", "options": ["A.900元", "B.180元", "C.2500元", "D.1500元"], "answer": "A", "analysis": "该在产品的评估值＝300×60%×5＝900（元）。", "topics": ["流动资产", "成本法"], "id": 56}, {"year": 2024, "subject": "实务一", "type": "单选", "qnum": 7, "stem": "采用收益法对某租赁机器进行评估，该设备的月租金净收入为2000元，收益期为30年，投资回收系数为0.24，则该设备的评估值为（ ）。", "options": ["A.3963元", "B.100000元", "C.8333元", "D.47551元"], "answer": "B", "analysis": "评估值=年租金净收入/投资回收系数＝2000×12/0.24＝100000（元）。", "topics": ["机器设备", "收益法"], "id": 57}, {"year": 2024, "subject": "实务一", "type": "多选", "qnum": 1, "stem": "对于长期股权投资评估，下列说法和做法正确的有（ ）。", "options": ["A.长期股权投资评估实际是对被投资单位资本或权益的评估", "B.缺乏控制权的长期股权投资评估，评估程序和评估方法选择可能受到限制", "C.长期股权投资评估不仅要考虑被投资单位的账内资产和负债，也要考虑被投资单位的账外资产和负债", "D.长期股权投资评估股东部分权益必然等于股东全部权益与股权比例的乘积", "E.持续经营是长期股权投资评估的重要假设"], "answer": "ABCE", "analysis": "长期股权投资评估股东部分权益不必然等于股东全部权益与股权比例的乘积，选项D说法错误。", "topics": ["长期股权投资"], "id": 58}, {"year": 2024, "subject": "实务一", "type": "多选", "qnum": 2, "stem": "根据有关法律和不动产登记现行有关规定，下列关于不动产登记簿的说法正确的有（ ）。", "options": ["A.不动产登记簿是不动产物权归属和内容的根据", "B.不动产登记簿是不动产登记的结果", "C.不动产登记簿由不动产登记机构管理，永久保存", "D.不动产登记簿以宗地或宗海为单位编成", "E.不动产登记簿根据不动产产权证书所记载的内容制作"], "answer": "ABCD", "analysis": "不动产权证书和不动产登记证明是不动产登记机构依据不动产登记簿记载的内容颁发给权利人或登记申请人作为凭证，是不动产登记簿所记载内容的外在表现形式，选项E说法错误。", "topics": ["房地产", "不动产登记"], "id": 59}, {"year": 2024, "subject": "实务一", "type": "多选", "qnum": 3, "stem": "采用成本法评估进口设备，下列各费用项目计算公式错误的有（ ）。", "options": ["A.基础费＝进口设备离岸价×基础费率", "B.关税＝进口设备到岸价×关税税率", "C.国外运输保险费＝进口设备离岸价×保险费率", "D.海运费＝进口设备离岸价×海运费率", "E.国内运杂费＝进口设备离岸价×国内运杂费率"], "answer": "ACE", "analysis": "进口设备基础费＝进口设备到岸价×进口设备基础费率，A错误。国外运输保险费＝(进口设备离岸价＋海运费)×保险费率，C错误。进口设备国内运杂费＝进口设备到岸价×进口设备国内运杂费率，E错误。", "topics": ["机器设备", "成本法"], "id": 60}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 1, "stem": "下列关于股权自由现金流量折现模型的说法中，错误的是（ ）。", "options": ["A.在企业的稳定增长阶段，股权自由现金流量的永续增长率应等于股权资本成本", "B.对股权自由现金流量进行折现，应采用股权资本成本", "C.在评估实务中，大多数企业的永续价值占总价值的比例超过50%", "D.计算永续价值的FCFE n，不必然等于预测期最后一期的股权自由现金流量"], "answer": "A", "analysis": "在企业的稳定增长阶段，股权自由现金流量的永续增长率应小于股权资本成本。选项A 错误。", "topics": ["企业价值", "收益法", "股权自由现金流量", "FCFE"], "id": 61}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 2, "stem": "下列收益指标中，与全投资资本匹配的收益指标是（ ）。", "options": ["A.股利", "B.经济利润", "C.净利润", "D.股权自由现金流量"], "answer": "B", "analysis": "股利、净利润、股权自由现金流量属于权益资本的收益指标；息前税后利润、企业自由现金流量、经济利润属于全投资资本的收益指标。", "topics": ["企业价值", "收益法", "经济利润"], "id": 62}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 3, "stem": "下列选项中，不属于专利资产法律特征的是（ ）。", "options": ["A.时效性", "B.约束性", "C.地域性", "D.保密性"], "answer": "D", "analysis": "专利资产法律特征包括：时效性、地域性、约束性。", "topics": ["专利", "无形资产"], "id": 63}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 4, "stem": "甲公司2020 年每股收益为1.65 元，股利支付率为35%，收益和股利的增长率预计为5%，该公司的β 值为1.2，市场风险溢价为7%，无风险报酬率为3%，则甲公司P/E 值为（ ）。", "options": ["A.5.74", "B.5.47", "C.7.35", "D.7"], "answer": "A", "analysis": "股权资本成本r＝3%＋7%×1.2＝11.4%；P/E＝b×（1＋g）/（r－g）＝35%×（1＋5%）/（11.4%－5%）＝5.74。", "topics": ["企业价值", "收益法", "价值比率", "股利折现", "CAPM", "P/E"], "id": 64}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 5, "stem": "下列关于专利资产价值影响因素的说法中，正确的是（ ）。", "options": ["A.经过实质审查的发明专利相比尚处于申请阶段的发明专利，具有更高的稳定性，通常具备更高的评估值", "B.经过无效请求审查程序的专利，就不再受到法律保护不能成为专利资产评估对象", "C.一项专利如果有已经有效的对外许可合同，这些有效的对外许可合同会对专利资产价值产生负面影响", "D.如果专利的权利要求内容使得权利保护范围小且具有非必要的技术特征，则对侵权产品取证容易，会增加专利的价值"], "answer": "A", "analysis": "无效请求的审查结果可以是全部无效、部分无效或维持专利权；有效的对外许可合同可能正面也可能负面影响；权利要求范围大且无必要技术特征才增加价值。", "topics": ["专利", "无形资产"], "id": 65}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 6, "stem": "下列方法中不属于无形资产收益期限常用确定方法的是（ ）。", "options": ["A.加权平均寿命法", "B.法定年限法", "C.剩余经济寿命预测法", "D.更新周期法"], "answer": "A", "analysis": "对无形资产收益期限可以采用法定年限法、更新周期法以及剩余经济寿命预测法等具体方法进行确定。", "topics": ["无形资产", "收益期限"], "id": 66}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 7, "stem": "关于企业价值评估结论合理分析的说法，错误的是（ ）。", "options": ["A.常见的表外负债包括土地恢复，环保要求等法律明确规定的未来义务", "B.采用加权平均各种评估方法结果得出的评估结论，要比采用单一评估方法结果得出的评估结论更合理", "C.毛利率明显高于同行业平均水平的企业可能存在表外资产项目", "D.对同一评估对象采用多种评估方法时，应当结合评估目的不同评估方法使用数据的质量和数量，采用定性或者定量分析方式形成评估结论"], "answer": "B", "analysis": "评估结论可以采用单一评估方法得到的结果，也可以采用加权平均各种评估方法结果的方式得到。", "topics": ["企业价值", "评估结论"], "id": 67}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 8, "stem": "下列关于无形资产评估量化资料的说法中，错误的是（ ）。", "options": ["A.实体性贬值，功能性贬值和经济性贬值的确认和量化资料是采用成本法评估所必需的", "B.无形资产评估对象由委托人进行申报确认，但资产评估专业人员需要分析相关信息资料确定作为评估对象的无形资产的存在性", "C.越接近评估基准日的无形资产信息资料，其时效性越好", "D.在采用市场评估无形资产时，可比交易信息或价值乘数是采用该方法的关键参数"], "answer": "A", "analysis": "由于无形资产没有实体，因此一般不适用实体性贬值概念，所以选项A 的说法不正确。", "topics": ["无形资产", "成本法"], "id": 68}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 9, "stem": "下列关于自创无形资产和外部取得无形资产的说法中，错误的是（ ）。", "options": ["A.企业接受投资或接受捐赠形成的无形资产属于外部取得无形资产", "B.采用成本法评估无形资产，外购无形资产的重置成本即为企业账面上记录的实际取得成本", "C.企业通过自行研究、开发、设计或在生产经营活动中形成的无形资产为自创无形资产，如自创专利权、专有技术及客户关系等", "D.企业自创无形资产可能并不反映在企业账面上，或者账面价值仅反映了自创无形资产全部价值中一部分"], "answer": "B", "analysis": "企业账面上记录的实际取得成本为历史成本，不一定能够反映评估基准日的物价水平。因此，选项B 的说法不正确。", "topics": ["无形资产", "成本法"], "id": 69}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 10, "stem": "关于企业价值评估中市场法操作的有关说法，错误的是（ ）。", "options": ["A.计算价值比率应当考虑内涵的一致性，分子及分母的匹配性", "B.选择可比对象的指导思想是业务相同或相似，并力求现金流量、成长潜力和风险水平方面的相似", "C.如果评估具有控制权股权价值，则适合采用权益价值比率", "D.可比对象与被评估企业在财务数据差异上的调整主要包括会计政策差异调整和特殊事项调整两个方面"], "answer": "C", "analysis": "若评估具有控制权股权价值，或被评估企业与可比对象资本结构差异较大时，则适合采用企业整体价值比率。所以选项C 的说法不正确。", "topics": ["企业价值", "市场法", "价值比率"], "id": 70}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 11, "stem": "下列关于企业价值评估中价值类型的说法中，错误的是（ ）。", "options": ["A.对不同条件的企业进行评估，可能选择不一样的价值类型", "B.投资价值是指评估对象对于具有明确投资目标的特定投资者或者某一类投资者所具有的价值评估数", "C.评估目的不同，价值类型也可能不同", "D.清算价值直接对应以清算为目的的评估"], "answer": "D", "analysis": "清算价值是指在评估对象处于被迫出售、快速变现等非正常市场条件下的价值估计数额。清算价值是一种价值类型，与以清算为目的的评估有联系而又不是直接对应关系。", "topics": ["企业价值", "价值类型"], "id": 71}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 12, "stem": "下列企业价值评估中，评估假设的说法，错误的是（ ）。", "options": ["A.企业价值评估假设应当与市场条件相适应", "B.在清算假设下，被评估企业的评估价值通常要低于在持续使用假设下的评估价值", "C.企业价值评估实际上是一种模拟市场判断企业价值的过程", "D.法律法规假设属于企业价值评估的基本假设"], "answer": "D", "analysis": "企业价值评估基本假设主要有交易假设、公开市场假设、持续经营价值和清算假设。", "topics": ["企业价值", "评估假设"], "id": 72}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 13, "stem": "下列商标资产核实事项中，不属于评价客体约束条件界定内容的是（ ）。", "options": ["A.明确评估的特定目的", "B.明确被评估商标的盈利模式", "C.明确被评估商标的权利形式", "D.明确被评估商标使用对象范围和空间"], "answer": "B", "analysis": "评估客体约束条件的界定包括：①明确评估特定目的；②明确被评估商标权利形式；③明确被评估商标使用对象范围与空间。明确被评估商标的盈利模式属于评估客体特征的界定。", "topics": ["商标", "无形资产"], "id": 73}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 14, "stem": "下列统计方法中，不可以直接用于确定被评估企业价值比率数值的是（ ）。", "options": ["A.中位数", "B.算术平均值", "C.调和平均数", "D.变异系数"], "answer": "D", "analysis": "变异系数反映观察值对于平均值的离散程度，可以用来比较不同价值比率样本的离散程度，以此为依据选择最适合的价值比率，而非直接得到一个价值比率数值。", "topics": ["企业价值", "市场法", "价值比率"], "id": 74}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 15, "stem": "关于资产基础法企业价值评估范围的说法，错误的是（ ）。", "options": ["A.采用资产基础法评估企业集团的价值时，应当采用集团口径的合并资产负债表", "B.评估专业人员可要求委托人提供经独立第三方实施专项审计的资产负债表", "C.采用资产基础法评估企业价值，应当关注评估范围是否包含或有负债", "D.评估范围应当与评估目的所涉及的经济行为相关决策保持一致"], "answer": "A", "analysis": "采用资产基础法评估企业集团的价值时，一般采用母公司口径的个别资产负债表，评估范围中包括对子公司的长期股权投资项目。", "topics": ["企业价值", "资产基础法"], "id": 75}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 16, "stem": "关于著作权资产及其评估的说法错误的是（ ）。", "options": ["A.著作权资产是指权利人拥有或控制的，能够持续发挥作用并且预期能带来经济利益的著作权的财产权益，不包括与著作权有关权利的财产权益", "B.著作权资产的财产权利形式包含转让或者许可他人使用的权利", "C.对于能够通过销售实现收益的著作权资产，通常采用法律规定的或市场上惯用的一定比例的版税或提成费用的评估方法，直接获得著作权资产的评估值", "D.在具体的著作权资产评估业务中，根据不同的评估目的，评估对象可以是著作权财产权益中的某一项单项权利，也可以是由几项单项权利组成的权利组合"], "answer": "A", "analysis": "著作权资产是指权利人所拥有或者控制的，能够持续发挥作用并且预期能带来经济利益的著作权的财产权益和与著作权有关权利的财产权益。", "topics": ["著作权", "无形资产"], "id": 76}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 17, "stem": "甲公司将一项专利独占许可给乙公司，拟采用约当投资分成法确定利润分成率。该专利系甲公司自行研发创建，重置成本为105 万元。经专业人员测算，该专利成本利润率为300%。乙公司若使用该专利，相关资产重置成本为4000 万元，成本利润率为12%，则该专利利润分成率（ ）。", "options": ["A.8.93%", "B.9.38%", "C.8.57%", "D.8.20%"], "answer": "C", "analysis": "专利约当投资量＝105×（1＋300%）＝420（万元）；乙公司的约当投资量＝4000×（1＋12%）＝4480（万元）；利润分成率＝420/（420＋4480）×100%＝8.57%。", "topics": ["专利", "无形资产", "收益法", "分成率"], "id": 77}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 18, "stem": "关于加权平均资本成本的说法中错误的是（ ）。", "options": ["A.使用风险调整法是以同时期政府债券收益率为基础加上企业信用风险补偿率", "B.计算资本结构，权益资本和债务资本的价值通常是指市场价值", "C.优先股的资本成本小于普通股的资本成本", "D.基于银行贷款利率估算债务资本成本过程中，可以直接使用贷款市场报价利率"], "answer": "D", "analysis": "在基于银行贷款利率估算债务资本成本过程中，不宜直接将贷款市场报价利率作为被评估企业的债务资本成本。", "topics": ["企业价值", "WACC"], "id": 78}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 19, "stem": "甲公司净利润1500 万元。债务资本4000 万元，权益资本8000 万元。债务资本回报率6%，权益资本回报率12%，企业所得税税率25%。则甲公司经济利润为（ ）万元。", "options": ["A.720", "B.1260", "C.1320", "D.540"], "answer": "D", "analysis": "经济利润=净利润-股权资本成本＝1500－8000×12%＝540（万元）。", "topics": ["企业价值", "收益法", "经济利润"], "id": 79}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 20, "stem": "下列选项中，不属于企业的主要特点的是（ ）。", "options": ["A.整体性", "B.垄断性", "C.持续经营性", "D.权益可分性"], "answer": "B", "analysis": "企业的主要特点：（1）盈利性；（2）持续经营性；（3）整体性；（4）权益可分性。", "topics": ["企业价值"], "id": 80}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 21, "stem": "关于企业价值评估中收益法局限性的说法，正确的是（ ）。", "options": ["A.价值影响的因素难以考虑周全", "B.受企业运营期影响", "C.难以发现对企业价值影响", "D.对资产市场有严格的要求"], "answer": "B", "analysis": "应用收益法进行企业价值评估时，其局限性主要体现在：受市场条件制约、受企业营运期影响、部分评估参数对评估结果的影响非常敏感以及具有较强的主观性。", "topics": ["企业价值", "收益法"], "id": 81}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 22, "stem": "企业战略分析，属于业务层战略的是（ ）。", "options": ["A.成本领先战略、差异化战略、集中战略", "B.集中化、人力资源战略、财务战略", "C.成本领先战略、差异化战略、服务战略", "D.差异化战略 研发战略 销售战略"], "answer": "A", "analysis": "根据获取竞争优势的途径，业务层战略可以分为成本领先战略、差异化战略和集中战略。", "topics": ["企业价值", "战略分析"], "id": 82}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 23, "stem": "下列无形资产中，不属于权利型无形资产的是（ ）。", "options": ["A.著作权", "B.特许使用权", "C.专卖权", "D.租赁权"], "answer": "A", "analysis": "权利型无形资产是指特定当事人经由他人授权获得的能给特定当事人带来超额收益的相关权利，例如租赁权、特许经营权和专卖权等。著作权属于知识型无形资产。", "topics": ["无形资产"], "id": 83}, {"year": 2021, "subject": "实务二", "type": "单选", "qnum": 24, "stem": "著作权财产使用权中不属于作品使用方式相关的权利是（ ）。", "options": ["A.复制权", "B.翻译权", "C.摄制权", "D.放映权"], "answer": "D", "analysis": "著作权财产权中，与作品使用方式相关的权利包括：复制权、摄制权、改编权、翻译权和汇编权。放映权属于作品传播相关权利。", "topics": ["著作权", "无形资产"], "id": 84}, {"year": 2021, "subject": "实务二", "type": "多选", "qnum": 1, "stem": "下列关于企业价值评估中评估对象和范围的说法中，错误的是（ ）。", "options": ["A.从资本的运用角度看，企业整体权益价值等于股东全部权益价值加上企业的全部付息负债", "B.会计列报的资产负债表所反映的资产、负债是企业的全部资产和负债", "C.经常性的其他业务收入对应的资产通常可界定为经营性资产", "D.资产、负债的经营性或非经营性的区分，取决于资产、负债在具体企业中的具体配置和利用情况", "E.股东部分权益价值并不必然等于股东全部权益价值与股权比例的乘积"], "answer": "AB", "analysis": "从资本的运用角度看，企业整体权益价值等于企业的总资产价值减去企业负债中的非付息债务价值后的余额；从资本的来源角度看，等于股东全部权益价值加上企业的全部付息债务的价值。选项AB错误。", "topics": ["企业价值", "评估对象"], "id": 85}, {"year": 2021, "subject": "实务二", "type": "多选", "qnum": 2, "stem": "下列关于无形资产和无形资产评估的说法中，正确的有（ ）。", "options": ["A.由于无形资产无实物形态，因此资产评估专业人员无需采用现场调查的方式，对无形资产进行清查核实", "B.组合型无形资产是由多种因素综合形成的无形资产，其构成和边界是动态的，会随着时间的变化而变化", "C.国家现行银行信贷利率、外汇利率无重大不可预见变化属于无形资产评估基本假设", "D.一定条件下可以采用成本法和市场法对无形资产进行评估，但最常用的方法是收益法", "E.因为无形资产必须依附于有形资产或相关载体发挥作用，所以无形资产评估范围等同于企业价值评估范围"], "answer": "BD", "analysis": "应当视具体情况开展适当的实地调查（A错）；无形资产评估基本假设包括持续使用、公开市场、清算假设（C为具体假设，错）；收益法应用最广泛（D对）；无形资产评估范围不等同企业价值评估范围（E错）。", "topics": ["无形资产"], "id": 86}, {"year": 2021, "subject": "实务二", "type": "多选", "qnum": 3, "stem": "关于企业价值评估确定收益期应考虑的因素包括（ ）。", "options": ["A.法律法规的规定", "B.企业主要资产的使用期限", "C.企业的经营状况", "D.企业的投资规模", "E.章程和协议的约定"], "answer": "ABCE", "analysis": "对企业收益期的确定，通常应考虑法律法规的规定、协议和章程的约定、企业主要资产的使用期限以及企业经营状况等因素的影响。", "topics": ["企业价值", "收益期"], "id": 87}, {"year": 2021, "subject": "实务二", "type": "多选", "qnum": 4, "stem": "评估专业人员在确定评估无形资产分成率时，应考虑的因素有（）。", "options": ["A.企业的经营类型和经营能力", "B.企业的行业状况", "C.其他贡献资产的账面价值", "D.其他贡献资产在创造收益的过程中的相对重要程度", "E.该无形资产的具体类型"], "answer": "ABDE", "analysis": "选择分成率应考虑：无形资产具体类型、所在企业经营类型、行业状况、实际经营能力、其他资产贡献的相对重要性、市场上类似转让协议的分成情况，以及以其他有形及无形资产公允价值为基础测算经济收益指标。", "topics": ["无形资产", "分成率"], "id": 88}, {"year": 2021, "subject": "实务二", "type": "多选", "qnum": 5, "stem": "关于销售收入分成率的下列公式中,表述正确的有（ ）。", "options": ["A.销售收入分成率=销售利润分成率/销售利润率", "B.销售收入分成率=销售利润分成率×销售利润率", "C.销售利润分成率=销售收入分成率/销售利润率", "D.销售利润分成率=销售收入分成率×销售利润率", "E.销售利润分成率=收益额/销售利润"], "answer": "BCE", "analysis": "收益额=销售收入×销售收入分成率=销售利润×销售利润分成率。所以销售利润分成率=收益额/销售利润；销售收入分成率=销售利润分成率×销售利润率；销售利润分成率=销售收入分成率÷销售利润率。", "topics": ["无形资产", "分成率"], "id": 89}, {"year": 2021, "subject": "实务二", "type": "综合", "qnum": 1, "stem": "国有企业甲集团公司拟转让其持有的乙公司12%的股权。委托资产评估机构对乙公司进行评估，评估基准日为2019 年12 月31 日，甲公司对乙公司不具有控制权。乙公司成立于2001 年，是一家非上市公司，主要从事化学药品研发、生产和销售。乙公司目前拥有100 多个品种、200 多个药品生产批准文号，其中80 多个品种被列入医保目录，在生产品种达60 余个，公司产品具有较强的市场竞争优势，销售状况良好。评估基准日乙公司资产负债相关数据如下表所示：表4-1 乙公司资产负债表数据（货币资金7000、短期借款2000、应收账款3000、应付账款4000、预付账款1000、预收账款2000、其他应收款300、应交税费2000、存货4000、应付职工薪酬100、长期股权投资1000、其他应付款600、固定资产60000、长期借款3000、在建工程2000、负债合计13700、无形资产3000、所有者权益合计67600、资产总计81300、负债及所有者权益合计81300）。其中，长期股权投资是乙公司对一家房地产企业的参股投资，评估基准日市场价值为1100 万元；在建工程为乙公司投资建设新化学原料生产线进行的新厂区建设工程，评估基准日施工还在进行中，资产尚未投入使用，市场价值为2200 万元。其他资产和负债均为经营性资产和负债。乙公司对固定资产采取加速折旧法计提折旧，评估基准日乙公司所得税税率为15%。2019 年乙公司利润表相关数据如下：表4-2（营业收入50000、投资收益20、营业利润17420、折旧4000、摊销280、利息费用250、所得税2613、净利润14807）。其中，投资收益为长期股权投资的分红收益。评估基准日，化学药品制造企业缺乏流动性折扣为30%，缺乏控制权折扣为25%。评估机构在采用市场法对乙公司进行评估时，选择了6 家上市公司作为可比案例，以其中的一家可比上市丙公司为例，相关数据如下：表4-3 丙公司相关数据表（股权市值320000、所有者权益账面价值120000、资产账面价值150000、长期股权投资0、短期借款3000、长期借款5000、营业收入90000、投资收益0、营业利润30000、折旧5000、摊销500、利息费用400、所得税4500、净利润25500）。评估基准日，丙公司的资产均为经营性资产，负债均为经营性负债。丙公司对固定资产采取直线法计提折旧，所得税率为15%。经对相关财务指标进行测算，乙公司与丙公司价值比例调整系数如下：表4-4（运营能力乙公司100/丙公司103/系数0.97；偿债能力100/100/1.00；成长能力100/99/1.01）。请根据上述资料回答下列问题：（1）对比乙公司和丙公司相关财务数据口径分析判断，本项目在计算P/E 和P/B 两个价值比例时，应当调整哪些财务数据？（2）计算评估基准日丙公司EV/EBITDA。（3）计算调整后的EV/EBITDA。（4）请根据调整后的EV/EBITDA 估算乙公司的企业整体权益。（5）根据第（4）问计算结果，估算甲公司持有的乙公司12%的股权价值。", "options": [], "answer": "（1）应该调整乙公司长期股权投资、在建工程数据，同时剥离相应的收益，调整投资收益数据；因为固定资产采用折旧计提方法不同，需要调整固定资产折旧的数据。（2）EV/EBITDA=（320000+3000+5000）/（25500+4500+400+500+5000）=328000/35900=9.1365。（3）调整后丙公司EV/EBITDA=9.1365×0.97×1.00×1.01=8.9510。（4）乙公司的企业整体权益价值=8.9510×（14807-20+2613+250+280+4000）+1100+2200=8.9510×21930+3300=199595.43（万元）。（5）甲公司持有的乙公司12%的股权价值=（199595.43-2000-3000）×12%×（1-30%）=16,346.02（万元）。提示：上市公司比较法采用上市公司的股票交易价格计算股权市值，因此该市值代表的是流动性、少数股权的价值，故本题只需要考虑缺乏流动性折扣（30%），不需要考虑缺乏控制权折扣（25%）。", "analysis": "", "topics": ["企业价值", "市场法", "价值比率", "EV/EBITDA", "缺乏流动性折扣", "缺乏控制权折扣"], "id": 90}, {"year": 2021, "subject": "实务二", "type": "综合", "qnum": 1, "stem": "随着我国经济的高速发展和人民生活水平的提高，食品的安全与健康越来越受到消费者的关注，绿色、健康的果汁饮料也越来越受到消费者的青睐。M 公司是一家从事饮料研发与生产的企业，属于国内龙头企业。生产的产品按特质分为“便捷”、“乐趣”、“养生”和“纯天然”四大类。其中果汁属于“纯天然”一类。消费者购买果汁的主要动力是希望能获得其中有益健康的成分。大部分消费者对纯果汁的营养价值更为信任，其中追求高品质生活的职场女性是主要消费人群，这些人消费能力较强，消费理念成熟且难以改变。国内果汁市场真正发展还不到10 年，目前国内果汁人均年消费量还不到1L，果汁市场在中国仍有巨大的发展空间。传统的碳酸型饮料及瓶装水属于“便捷”一类，市场成熟稳定，M 企业的多个子品牌深受广大消费者欢迎。追求时尚新生活的年轻人喜欢的咖啡、气泡水等属于“乐趣”一类，市场增长率较高，研发投入也较大，本公司涉足这个领域时间尚短，所以市场占有率还不高，该类产品市场种类较多，市场占有率都不高。另外还有药食同源类的“养生”类，定位于中老年人，因为中老年人有喝饮料习惯的人比较少，对新生事物的接受度不高，导致这类研发投入较大，产品销量很少。（1）简述波士顿矩阵是根据哪些指标将企业全部经营业务定位在四个区域。（2）根据波士顿矩阵理论将集团的这四种饮料进行归类。（3）分析案例中提到的四种饮料分别适合选用哪种财务战略，并说明理由。（4）按照市场结构进行划分，市场有哪几种类型，“乐趣”饮料属于什么市场类型。", "options": [], "answer": "（1）相对市场份额和销售增长率。（2）①明星业务：年轻职场女性喜欢的“纯天然”类饮料；②问题业务：时尚年轻人喜欢的“乐趣”类；③现金牛业务：以传统的碳酸饮料及瓶装水为主的“便捷”类；④瘦狗业务：食药同源的“养生”型饮料。（3）①“乐趣”类和“纯天然”类饮料适合采用发展型财务战略，以提高相对市场占有率为目标，增加资金投入；②“便捷”类饮料适合采用维持型财务战略，投资维持现状，保持市场占有率；③对处境不佳的“现金牛”业务及没有发展前途的“问题”业务和“瘦狗”业务，视情况采取收割战略；④“养生”类饮料适合采用放弃型财务战略，清理和撤销某些业务。（4）市场有完全竞争市场、垄断竞争市场、寡头垄断市场、完全垄断市场。“乐趣”饮料属于垄断竞争市场。", "analysis": "", "topics": ["企业价值", "战略分析", "波士顿矩阵", "财务战略", "市场结构"], "id": 91}, {"year": 2021, "subject": "实务二", "type": "综合", "qnum": 2, "stem": "甲为成品油销售公司，其下属的丙加油站分公司位于城市边缘。由于丙加油站所在区域城市规划调整，周边车流量逐年下降，特别是丙加油站签约运输企业大客户流失较多，导致近两年丙加油站销售业绩连续下滑。现根据甲公司剥离无效低效资产的业务调整战略，甲公司董事会决议，拟“剥离出售丙加油站经营性资产和相关负债及成品油销售业务”，聘请资产评估机构以2019 年12 月31 日为评估基准日进行资产评估。资产评估机构分别采用资产基础法和收益法进行了评估。其中收益法评估结果480 万元，资产基础法评估结果570 万元。资产基础法相关数据：流动资产100/评估100、货币资金50/50、应收账款50/50、固定资产400/460（机器设备150/160，从其他加油站借用4 台设备并按市场水平支付租金已纳入申报表；房屋建筑物250/300）、无形资产100/110（土地使用权50/60、客户关系50/50按十年期摊销纳入申报表按账面值列式）、资产总额600/670、流动负债100/100（应付账款100/100）、负债总额100/100、净资产500/570。要求：（1）本次评估是企业价值评估还是业务价值评估，说明两者的主要差异。（2）资产基础法的评估范围是否合理，如果不合理，请说明相关事项及其理由。（3）客户关系评估值按账面值列式是否合理并说明理由。（4）本次最终评估结论适宜选取哪种方法的评估结果？", "options": [], "answer": "（1）本次评估是业务价值评估。理由：题干为分公司剥离业务；分公司不具有法人资格，业务存在于企业内部并非依法设立的实体，不构成独立法人资格（企业中的公司具有独立法人资格）。（2）不合理。机器设备的评估范围中不应该包括从其他加油站借用的4 台设备。（3）不合理。丙加油站签约运输企业大客户流失较多，客户关系无形资产具有较大贬值，按账面金额列式评估值不合理。（4）收益法前提：持续经营、未来收益可预测、资料充分。丙分公司即将被剥离，不满足持续经营假设，未来收益预测不确定性大，收益法结果不可取。资产基础法适用于难以盈利、难以找到参照企业、可能进入清算状态的企业。应选择调整后的资产基础法评估结果。", "analysis": "", "topics": ["企业价值", "业务价值评估", "资产基础法", "收益法"], "id": 92}, {"year": 2022, "subject": "实务二", "type": "单选", "qnum": 1, "stem": "下列价值比率中不属于盈利价值比率的是（ ）。", "options": ["A.EV/S", "B.P/E", "C.EV/FCFF", "D.EV/EBIT"], "answer": "A", "analysis": "盈利价值比率包括权益价值比率（P/E、PEG、P/FCFE）和企业整体价值比率（EV/EBITDA、EV/EBIT、EV/FCFF）。EV/S 属于收入价值比率。", "topics": ["企业价值", "市场法", "价值比率"], "id": 93}, {"year": 2022, "subject": "实务二", "type": "单选", "qnum": 2, "stem": "下列原则中，不属于市场法应用基本原则的是（ ）。", "options": ["A.有效性原则", "B.公益性原则", "C.及时性原则", "D.可比性原则"], "answer": "B", "analysis": "市场法评估的基本原则包括可比性原则、可获得性原则、及时性原则、透明度原则及有效性原则。", "topics": ["企业价值", "市场法"], "id": 94}, {"year": 2022, "subject": "实务二", "type": "单选", "qnum": 3, "stem": "被评估对象为一项专利技术，在该技术的研制过程中，材料消耗15 万元，动力消耗20 万元，支付科研人员工资30 万元。评估专业人员经过市场调查论证，确定科研人员创造性劳动倍加系数为1.5，科研的平均风险系数为0.5，该无形资产的投资报酬率为20%，行业净资产收益率为15%，采用倍加系数法测算该专利技术的重置成本为（ ）。", "options": ["A.166.67 万元", "B.208 万元", "C.150 万元", "D.192 万元"], "answer": "D", "analysis": "重置成本＝（无形资产研发中的物化劳动消耗＋科研人员创造性劳动倍加系数×活劳动消耗）/（1－科研平均风险系数）×（1＋无形资产投资报酬率）＝（15＋20＋30×1.5)/（1－0.5）×（1＋20%）＝192（万元）。", "topics": ["专利", "无形资产", "成本法", "倍加系数法"], "id": 95}, {"year": 2022, "subject": "实务二", "type": "单选", "qnum": 4, "stem": "下列企业价值评估方法的适用前提中，不属于市场法适用前提的是（ ）。", "options": ["A.市场有效性", "B.数据差异性", "C.数据充分性", "D.数据时效性"], "answer": "B", "analysis": "市场法的适用前提具体包括数据充分性、数据时效性和市场有效性。", "topics": ["企业价值", "市场法"], "id": 96}, {"year": 2022, "subject": "实务二", "type": "单选", "qnum": 5, "stem": "下列企业价值评估的收益预测方法中，不属于定量分析方法的是（ ）。", "options": ["A.主观概率预测法", "B.趋势外推法", "C.平均预测法", "D.指数平滑预测法"], "answer": "A", "analysis": "定量预测方法主要有时间序列预测法和回归分析预测法（平均预测法、指数平滑预测法、趋势外推法）。主观概率预测法属于定性预测方法。", "topics": ["企业价值", "收益法", "收益预测"], "id": 97}, {"year": 2022, "subject": "实务二", "type": "单选", "qnum": 6, "stem": "下列价值比率中，属于成长型生物制药企业通常选择的是（ ）。", "options": ["A.P/E", "B.P/B", "C.P/FCFE", "D.PEG"], "answer": "D", "analysis": "PEG 指标以市盈率指标为基础，弥补了市盈率对企业动态成长性估计的不足，适用于生物制药、奢侈品及信息技术等高增长行业。", "topics": ["企业价值", "市场法", "价值比率", "PEG"], "id": 98}, {"year": 2022, "subject": "实务二", "type": "单选", "qnum": 7, "stem": "下列关于企业价值评估的说法中，错误的是（ ）。", "options": ["A.评估对象载体是由多个或多种单项资产组成的资产综合体", "B.企业价值评估是一种整体性评估", "C.企业价值评估的关键是分析判断企业整体获利能力", "D.企业价值是企业各项单项资产价值的相加，即企业单项资产的价值之和就是企业价值"], "answer": "D", "analysis": "企业价值评估强调从整体上计量企业的全部资产形成的整体价值，而不是简单估计单项资产的价值之和。企业价值不是各项单项资产价值的简单相加。", "topics": ["企业价值"], "id": 99}, {"year": 2022, "subject": "实务二", "type": "单选", "qnum": 8, "stem": "已知目标公司β 值为1.2，无风险利率为3%，市场预期报酬率为8%，企业特定风险调整系数为2%，则该公司的股权资本成本为（ ）。", "options": ["A.8%", "B.13%", "C.11%", "D.9%"], "answer": "C", "analysis": "股权资本成本＝无风险利率＋β×（市场预期报酬率－无风险利率）＋企业特定风险调整系数＝3%＋1.2×（8%－3%）＋2%＝11%。", "topics": ["企业价值", "收益法", "CAPM", "股权资本成本"], "id": 100}, {"year": 2022, "subject": "实务二", "type": "多选", "qnum": 1, "stem": "下列方法中，属于无形资产收益期限常用确定方法的是（ ）。", "options": ["A.时间序列预测法", "B.法定年限法", "C.剩余经济寿命预测法", "D.更新周期法", "E.限制分析预测法"], "answer": "BCD", "analysis": "无形资产收益期限常用确定方法包括法定年限法、更新周期法和剩余经济寿命预测法。", "topics": ["无形资产", "收益期限"], "id": 101}, {"year": 2022, "subject": "实务二", "type": "综合", "qnum": 1, "stem": "甲公司是一家新型环保材料制造企业，因拟增资扩股委托资产评估机构对甲公司的股东全部权益进行评估。评估基准日为2021 年12 月31 日，价值类型为市场价值。甲公司相关财务状况如下：表1 甲公司流动资产和流动负债统计表（2020/2021货币资金400/500、应收账款2200/2800、其他应收款1500/1000、存货4400/5000；短期借款4000/6000、应付账款1000/2000、其他应付款1200/1600）。甲公司最佳现金周转率为70 次，其中，2020 年12 月31 日货币资金余额即为最佳现金持有量。甲公司2020 年12 月31 日的其他应收款中有一笔关联方的临时借款500 万元，无需支付利息。2021 年甲公司拟修建职工休闲俱乐部，工程在评估基准日尚未完工，存货中有相应的工程物资100 万元，应付账款中有未付工程款400 万元。另外，评估基准日的其他应付款中有一笔新冠肺炎疫情防控捐赠款200 万元。表2 甲公司收入和成本费用统计表（2021营业收入35000、营业成本22000、销售费用4900、管理费用3500、研发费用1700，其中折旧摊销1600；2022预测营业收入37000、营业成本23500、销售费用5100、管理费用3700、研发费用1800，其中折旧摊销1700；财务费用2021为240、2022预测250）。经分析，甲公司经营性资产和负债周转情况相对比较平稳，评估专业人员拟采用2021 年经营性资产和负债周转率水平预测未来年度的营运资金规模。要求：（1）分别计算甲公司2021 年12 月31 日和2022 年12 月31 日的最佳现金持有量。（2）计算甲公司预测期适用的应收账款周转率以及2022 年12 月31 日的应收账款预测值。（3）计算甲公司预测期适用的其他应收款周转率以及2022 年12 月31 日的其他应收款预测值。（4）计算甲公司预测期适用的存货周转率以及2022 年12 月31 日的存货预测值。（5）计算甲公司预测期适用的应付账款周转率以及2022 年12 月31 日的应付账款预测值。（6）计算甲公司预测期适用的其他应付账款周转率以及2022 年12 月31 日的其他应付账款预测值。（7）计算甲公司预测期第一期的营运资金增加额。", "options": [], "answer": "（1）2021年付现成本＝22000＋（4900＋3500＋1700）－1600＝30500；平均值＝30500/70＝435.71，（2021最佳+400）/2=435.71 → 2021年末最佳＝471.42万元。2022年付现成本＝23500＋（5100＋3700＋1800）－1700＝32400；平均值＝32400/70＝462.86，（2022最佳+471.42）/2=462.86 → 2022年末最佳＝454.3万元。（2）2021年应收账款周转率＝35000/[（2200+2800）/2]＝14次；2022年：37000/[（2800+2022应收）/2]＝14 → 2022应收＝2485.71万元。（3）2021年其他应收款（扣500）＝1000；周转率＝35000/[（1000+1000）/2]＝35次；2022年：37000/[（1000+2022其他应收）/2]＝35 → 2022其他应收＝1114.29万元。（4）2021年存货（扣100）＝4900；周转率＝22000/[（4400+4900）/2]＝4.73次；2022年：23500/[（4900+2022存货）/2]＝4.73 → 2022存货＝5036.58万元。（5）2021年应付账款（扣400）＝1600；周转率＝22000/[（1000+1600）/2]＝16.92次；2022年：23500/[（1600+2022应付）/2]＝16.92 → 2022应付＝1177.78万元。（6）2021年其他应付款（扣200）＝1400；周转率＝22000/[（1200+1400）/2]＝16.92次；2022年：23500/[（1400+2022其他应付）/2]＝16.92 → 2022其他应付＝1377.78万元。（7）经营性流动资产增加＝（454.3+2485.71+1114.29+5036.58）－（471.42+2800+1000+4900）＝－80.54；经营性流动负债增加＝（1177.78+1377.78）－（1600+1400）＝－444.44；营运资金增加额＝（－80.54）－（－444.44）＝363.9万元。", "analysis": "", "topics": ["企业价值", "收益法", "收益预测", "营运资金", "周转率"], "id": 102}, {"year": 2024, "subject": "实务二", "type": "单选", "qnum": 1, "stem": "关于著作权资产及其评估的说法，错误的是（ ）。", "options": ["A.法律制度、著作权意识和政策导向对著作权资产价值有较大影响", "B.在我国，著作权的法律保护期限为50 年，截止于作品创作完成后第50 年的12 月31 日", "C.著作权资产的财产权利包含转让者许可他人使用的权利", "D.著作权一般不能单独发挥作用，需要与其他相关资产共同发挥作用"], "answer": "B", "analysis": "不同著作权权利有不同保护期限：自然人作品财产权保护期为作者死亡后第50年；法人/非法人组织职务作品发表权保护期50年，截止于创作完成后第50年12月31日，财产权截止于首次发表后第50年12月31日。选项B笼统说“创作完成后第50年”错误。", "topics": ["著作权", "无形资产"], "id": 103}, {"year": 2024, "subject": "实务二", "type": "单选", "qnum": 2, "stem": "下列影响因素中，不属于企业价值评估实务中确定收益期时通常应考虑的因素是（ ）。", "options": ["A.法律法规的规定", "B.企业经营状况", "C.企业投资规模", "D.协议和章程的约定"], "answer": "C", "analysis": "确定收益期应考虑国家有关法律法规、协议与章程约定、经营状况、资产特点和资源条件等，企业投资规模不属于通常考虑因素。", "topics": ["企业价值", "收益期"], "id": 104}, {"year": 2024, "subject": "实务二", "type": "单选", "qnum": 3, "stem": "关于专利资产及其评估的说法正确的是（ ）。", "options": ["A.一项专利如果已经有效的对外许可合同，则这些有效的对外许可合同会对专利资产价值产生负面影响", "B.如果专利的权利要求恰当使得权利保护范围缩小且具有非必要的技术特征，则对侵权产品容易取证，因而增加专利的价值", "C.专利资产的质押包括所有权质押和收益权的质押", "D.经过无效请求审查拒绝的专利，就不再受到法律保护，不能成为专利资产评估对象"], "answer": "C", "analysis": "有效对外许可合同可能正面也可能负面影响（A错）；权利要求恰当应使保护范围大且无必要技术特征才增加价值（B错）；无效审查结果可为部分无效或维持，仍可能成为评估对象（D错）；专利质押包括所有权质押和收益权质押（C对）。", "topics": ["专利", "无形资产"], "id": 105}, {"year": 2024, "subject": "实务二", "type": "单选", "qnum": 4, "stem": "关于企业价值评估中评估假设的说法，正确的是（ ）。", "options": ["A.在对并购标的企业进行评估时，若考虑了协同效应对企业未来收益及企业价值的影响，则应当使并购基于持续经营假设", "B.清算假设不属于企业价值评估的基本假设", "C.评估专业人员不能使用非真实性假设", "D.评估假设不会直接影响企业价值评估的价值类型"], "answer": "A", "analysis": "企业价值评估基本假设主要有交易假设、公开市场假设、持续经营假设和清算假设（B错）；应谨慎使用非真实性假设（C错）；评估假设与市场条件相适应，是价值类型和企业价值的重要决定因素（D错）。", "topics": ["企业价值", "评估假设"], "id": 106}, {"year": 2024, "subject": "实务二", "type": "单选", "qnum": 5, "stem": "关于经济利润折现模型的说法，错误的是（ ）。", "options": ["A.如果企业的投资回报率等于加权平均资本成本，则企业的经济利润为零", "B.对企业收益期的经济利润进行折现，应采用股权资本成本", "C.相比于自由现金流量，经济利润更适合作为企业绩效的评价指标", "D.经济利润是指企业税后净营业利润减去资本成本后的余额"], "answer": "B", "analysis": "对企业收益期的经济利润进行折现，应采用加权平均资本成本（WACC），而非股权资本成本。", "topics": ["企业价值", "收益法", "经济利润", "WACC"], "id": 107}, {"year": 2024, "subject": "实务二", "type": "单选", "qnum": 6, "stem": "关于商标资产特征的说法，错误的是（ ）。", "options": ["A.广告宣传有利于扩大商标的知名度与美誉度，因此广告宣传费用对商标资产价值起决定作用", "B.商标注册的地域范围是影响商标资产价值的重要因素", "C.获得法律保护后的驰名商标是一种典型的商标资产", "D.商标资产可以是独立的商标权或以商标权为核心的资产组合"], "answer": "A", "analysis": "广告宣传费用对商标资产价值起影响作用，而非决定作用；商标资产的经济价值体现为能获得超额收益。", "topics": ["商标", "无形资产"], "id": 108}, {"year": 2024, "subject": "实务二", "type": "单选", "qnum": 7, "stem": "下列著作权财产权利中，属于作品使用权相关权利的是（ ）。", "options": ["A.翻译权", "B.出租权", "C.展览权", "D.放映权"], "answer": "A", "analysis": "著作权财产权中，按照作品使用方式划分的相关权利包括复制权、摄制权、改编权、翻译权和汇编权。", "topics": ["著作权", "无形资产"], "id": 109}, {"year": 2024, "subject": "实务二", "type": "多选", "qnum": 1, "stem": "下列关于价值比率选择及确定的说法，错误的有（ ）。", "options": ["A.如果企业所属行业的各类成本和销售利润水平比较稳定可以选择收入基础价值比率", "B.当标的企业与可比对象在税率、资本结构等方面存在较大差异时，来用EV/EBIT 指标更为合理", "C.公司的股利支付率是市盈率指标确定中最主要的驱动因素", "D.价值比率常用的调整方法主要有财务绩效调整、规模及其他风险因素差异调整、成长性调整等", "E.PEG 指标适用于成熟的行业"], "answer": "CE", "analysis": "公司的增长潜力是市盈率指标确定中最主要的驱动因素（C错）；PEG适用于生物制药、奢侈品及信息技术等高增长行业，对成熟、亏损或衰退行业不适用（E错）。", "topics": ["企业价值", "市场法", "价值比率", "PEG"], "id": 110}, {"year": 2024, "subject": "实务二", "type": "多选", "qnum": 2, "stem": "下列关于股权自由现金流量折现模型的说法中，错误的有（ ）。", "options": ["A.永续价值占总价值比重很大时，代表企业价值均系在永续期内实现的", "B.经营性现金包括超过经营需要的有价证券等金融资产", "C.新发行债务和偿还本金是股权自由现金流量的重要参数", "D.永续期的资本性支出与当期的折旧与摊销金额的合计数保持平衡的假设，仅适用于永续增长率零时的情形", "E.股权自由现金流量不会受到人为的操纵或干扰"], "answer": "ABE", "analysis": "永续价值占比大不代表价值均系永续期实现（A错）；经营性现金不包括超过经营需要的金融资产（B错）；股权自由现金流量＝企业自由现金流量－债权现金流量，新发行债务和偿还本金是重要参数（C对）；平衡假设仅适用于永续增长率为零（D对）；股权自由现金流量较不易受操纵而非“不会”（E错）。", "topics": ["企业价值", "收益法", "FCFE", "股权自由现金流量"], "id": 111}, {"year": 2024, "subject": "实务二", "type": "多选", "qnum": 3, "stem": "关于企业价值评估中评估对象和范围的说法，正确的是（ ）。", "options": ["A.其他业务收入形成的资产全部为非经营性资产", "B.股利折现模型可以直接用于评估股东部分权益价值", "C.企业整体权益价值不等于企业的总资产价值", "D.企业价值评估范围的界定，应当与评估对象的口径相匹配", "E.企业股东全部权益价值就是企业的净资产或所有者权益价值"], "answer": "BCDE", "analysis": "经常性其他业务收入对应资产为经营性资产，偶然性才为非经营性（A错）；股利折现模型可直接求取少数股权价值（B对）；企业整体权益价值不等于总资产价值（C对）；评估范围应与评估对象口径匹配（D对）；股东全部权益价值即净资产/所有者权益价值（E对）。", "topics": ["企业价值", "评估对象"], "id": 112}]</script>
+<script>
+/* ============ 数据加载 ============ */
+const QUESTIONS = JSON.parse(document.getElementById('qdata').textContent);
+const LS='cpv_answers_v1';
+let answers = JSON.parse(localStorage.getItem(LS)||'{}'); // {id:{picked,correct}}
+function saveAns(){localStorage.setItem(LS,JSON.stringify(answers));}
+document.getElementById('qcount').textContent =
+  `共 ${QUESTIONS.length} 题（实务一 ${QUESTIONS.filter(q=>q.subject==='实务一').length} · 实务二 ${QUESTIONS.filter(q=>q.subject==='实务二').length}）`;
+
+/* ============ Tab 切换 ============ */
+document.querySelectorAll('nav.tabs button').forEach(b=>{
+  b.onclick=()=>{
+    document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    document.getElementById('view-'+b.dataset.view).classList.add('active');
+    if(b.dataset.view==='heat') setTimeout(()=>{drawHeat();drawYear();},50);
+  };
+});
+
+/* ============ 工具函数 ============ */
+const fmt=(n,d=2)=>{if(!isFinite(n))return '—';return Number(n).toLocaleString('zh-CN',{minimumFractionDigits:d,maximumFractionDigits:d});};
+const pct=(n,d=2)=>fmt(n,d)+'%';
+function stepHTML(steps){
+  return '<div class="tree">'+steps.map((s,i)=>
+    `<div class="step ${i===steps.length-1?'final':''}"><span class="lb">${s.lb}</span><span class="fx">${s.fx}</span></div>`
+  ).join('')+'</div>';
+}
+function num(id){const v=parseFloat(document.getElementById(id).value);return isNaN(v)?null:v;}
+
+/* ============ 计算器模块定义 ============ */
+const CALCS = {
+  capm:{
+    name:'CAPM 股权资本成本',
+    desc:'资本资产定价模型：股权投资者的期望回报率。可含企业特定风险调整系数。',
+    formula:'Ke = Rf + β × (Rm − Rf) + Rs',
+    fields:[
+      {id:'rf',label:'无风险报酬率 Rf (%)',val:3},
+      {id:'beta',label:'贝塔系数 β',val:1.2},
+      {id:'rm',label:'市场预期报酬率 Rm (%)',val:8},
+      {id:'rs',label:'企业特定风险调整系数 Rs (%)',val:2},
+    ],
+    calc(v){
+      const mrp=v.rm-v.rf, ke=v.rf+v.beta*mrp+v.rs;
+      return{main:pct(ke),unit:'',steps:[
+        {lb:'市场风险溢价 MRP = Rm − Rf',fx:`${v.rm} − ${v.rf} = ${fmt(mrp)}%`},
+        {lb:'β × MRP',fx:`${v.beta} × ${fmt(mrp)} = ${fmt(v.beta*mrp)}%`},
+        {lb:'加上无风险利率与特定风险 Ke = Rf + β×MRP + Rs',fx:`${v.rf} + ${fmt(v.beta*mrp)} + ${v.rs} = ${pct(ke)}`},
+      ]};
+    },
+    note:'真题验证 · 2022实务二单选8：β=1.2, Rf=3%, Rm=8%, Rs=2% → Ke=11%（答案C）'
+  },
+  wacc:{
+    name:'WACC 加权平均资本成本',
+    desc:'按债务与权益的市场价值加权，债务成本需乘税盾 (1−T)。',
+    formula:'WACC = E/(D+E)×Ke + D/(D+E)×Kd×(1−T)',
+    fields:[
+      {id:'e',label:'权益资本 E（万元）',val:8000},
+      {id:'d',label:'债务资本 D（万元）',val:4000},
+      {id:'ke',label:'权益资本成本 Ke (%)',val:12},
+      {id:'kd',label:'债务资本成本 Kd (%)',val:6},
+      {id:'t',label:'所得税税率 T (%)',val:25},
+    ],
+    calc(v){
+      const tot=v.e+v.d, we=v.e/tot, wd=v.d/tot, kdAfter=v.kd*(1-v.t/100);
+      const wacc=we*v.ke+wd*kdAfter;
+      return{main:pct(wacc),unit:'',steps:[
+        {lb:'资本总额 D + E',fx:`${fmt(v.d,0)} + ${fmt(v.e,0)} = ${fmt(tot,0)} 万元`},
+        {lb:'权益权重 E/(D+E) 与债务权重 D/(D+E)',fx:`We=${fmt(we*100)}%，Wd=${fmt(wd*100)}%`},
+        {lb:'税后债务成本 Kd×(1−T)',fx:`${v.kd}×(1−${v.t}%) = ${fmt(kdAfter)}%`},
+        {lb:'加权 WACC = We×Ke + Wd×Kd(1−T)',fx:`${fmt(we*100)}%×${v.ke}% + ${fmt(wd*100)}%×${fmt(kdAfter)}% = ${pct(wacc)}`},
+      ]};
+    },
+    note:'税后债务成本是易错点：务必乘 (1−T)。真题2021实务二单选19同款结构 WACC=9.5%。'
+  },
+  gordon:{
+    name:'股利折现 Gordon 固定增长模型',
+    desc:'适用于收益期无限、股利稳定增长的企业。要求 g < Ke。',
+    formula:'V = D1 / (Ke − g)，其中 D1 = D0 × (1+g)',
+    fields:[
+      {id:'d0',label:'当期股利 D0（元/股，若已知D1填此并令g对应）',val:0.606},
+      {id:'g',label:'股利增长率 g (%)',val:5},
+      {id:'ke',label:'股权资本成本 Ke (%)',val:11.4},
+      {id:'useD1',label:'上面填的已是 D1？(1=是,0=否需×(1+g))',val:0},
+    ],
+    calc(v){
+      const d1 = v.useD1==1 ? v.d0 : v.d0*(1+v.g/100);
+      const denom=(v.ke-v.g)/100, V=d1/denom;
+      return{main:fmt(V),unit:'元/股',steps:[
+        {lb:'下期股利 D1 = D0×(1+g)',fx:v.useD1==1?`直接使用 D1 = ${fmt(d1,4)}`:`${fmt(v.d0,4)}×(1+${v.g}%) = ${fmt(d1,4)} 元`},
+        {lb:'折现分母 Ke − g',fx:`${v.ke}% − ${v.g}% = ${fmt(v.ke-v.g)}%`},
+        {lb:'股票价值 V = D1/(Ke−g)',fx:`${fmt(d1,4)} / ${fmt((v.ke-v.g)/100,4)} = ${fmt(V)} 元/股`},
+      ]};
+    },
+    note:'g 必须小于 Ke，否则模型失效。P/E 题即由此推导：P/E = V/EPS。'
+  },
+  pe:{
+    name:'内在市盈率 P/E（由Gordon推导）',
+    desc:'结合股利支付率与增长率，反推理论 P/E 值。',
+    formula:'P/E = [支付率×(1+g)] / (Ke − g)',
+    fields:[
+      {id:'eps',label:'每股收益 EPS（元）',val:1.65},
+      {id:'payout',label:'股利支付率 (%)',val:35},
+      {id:'g',label:'增长率 g (%)',val:5},
+      {id:'ke',label:'股权资本成本 Ke (%)',val:11.4},
+    ],
+    calc(v){
+      const d1=v.eps*(v.payout/100)*(1+v.g/100);
+      const P=d1/((v.ke-v.g)/100), pe=P/v.eps;
+      return{main:fmt(pe),unit:'倍',steps:[
+        {lb:'下期每股股利 D1 = EPS×支付率×(1+g)',fx:`${v.eps}×${v.payout}%×(1+${v.g}%) = ${fmt(d1,4)} 元`},
+        {lb:'每股价值 P = D1/(Ke−g)',fx:`${fmt(d1,4)}/${fmt((v.ke-v.g)/100,4)} = ${fmt(P)} 元`},
+        {lb:'P/E = P / EPS',fx:`${fmt(P)} / ${v.eps} = ${fmt(pe)} 倍`},
+      ]};
+    },
+    note:'真题验证 · 2021实务二单选4：EPS=1.65,支付率35%,g=5%,β=1.2,MRP=7%,Rf=3% → Ke=11.4%,P/E≈5.74（答案A）'
+  },
+  ep:{
+    name:'经济利润 EP',
+    desc:'税后净营业利润(NOPAT)减去全部投入资本的成本。EP>0 表示创造价值。',
+    formula:'EP = NOPAT − 投入资本 × WACC；NOPAT = 净利润 + 税后利息',
+    fields:[
+      {id:'ni',label:'净利润（万元）',val:1500},
+      {id:'d',label:'债务资本（万元）',val:4000},
+      {id:'e',label:'权益资本（万元）',val:8000},
+      {id:'kd',label:'债务资本回报率 (%)',val:6},
+      {id:'ke',label:'权益资本回报率 (%)',val:12},
+      {id:'t',label:'所得税税率 (%)',val:25},
+    ],
+    calc(v){
+      const nopat=v.ni+v.d*(v.kd/100)*(1-v.t/100);
+      const tot=v.d+v.e, we=v.e/tot,wd=v.d/tot;
+      const wacc=we*v.ke+wd*v.kd*(1-v.t/100);
+      const ep=nopat-tot*wacc/100;
+      return{main:fmt(ep,0),unit:'万元',steps:[
+        {lb:'税后利息 = 债务×Kd×(1−T)',fx:`${fmt(v.d,0)}×${v.kd}%×(1−${v.t}%) = ${fmt(v.d*(v.kd/100)*(1-v.t/100),0)} 万元`},
+        {lb:'NOPAT = 净利润 + 税后利息',fx:`${fmt(v.ni,0)} + ${fmt(v.d*(v.kd/100)*(1-v.t/100),0)} = ${fmt(nopat,0)} 万元`},
+        {lb:'WACC',fx:`${fmt(we*100)}%×${v.ke}% + ${fmt(wd*100)}%×${v.kd}%×(1−${v.t}%) = ${fmt(wacc)}%`},
+        {lb:'投入资本成本 = (D+E)×WACC',fx:`${fmt(tot,0)}×${fmt(wacc)}% = ${fmt(tot*wacc/100,0)} 万元`},
+        {lb:'经济利润 EP = NOPAT − 资本成本',fx:`${fmt(nopat,0)} − ${fmt(tot*wacc/100,0)} = ${fmt(ep,0)} 万元`},
+      ]};
+    },
+    note:'真题验证 · 2021实务二单选19 → 经济利润=540万元（答案D）。折现经济利润用 WACC，不是股权成本。'
+  },
+  evebitda:{
+    name:'EV/EBITDA 市场法测值',
+    desc:'用可比公司乘数经修正后测算目标企业价值，再扣付息债务得股权价值，最后考虑折扣。',
+    formula:'股权价值 =（修正后乘数×EBITDA − 付息债务）×持股比例×(1−折扣)',
+    fields:[
+      {id:'mult',label:'可比公司 EV/EBITDA 倍数',val:9.1365},
+      {id:'adj',label:'修正系数连乘（如0.97×1.0×1.01）',val:0.9797},
+      {id:'ebitda',label:'目标企业 EBITDA（万元）',val:21930},
+      {id:'debt',label:'付息债务（万元）',val:5000},
+      {id:'share',label:'持股比例 (%)',val:12},
+      {id:'disc',label:'缺乏流动性折扣 (%)',val:30},
+    ],
+    calc(v){
+      const adjMult=v.mult*v.adj;
+      const ev=adjMult*v.ebitda;
+      const equity=ev-v.debt;
+      const val=equity*(v.share/100)*(1-v.disc/100);
+      return{main:fmt(val,2),unit:'万元',steps:[
+        {lb:'修正后乘数 = 可比乘数×修正系数',fx:`${fmt(v.mult,4)}×${fmt(v.adj,4)} = ${fmt(adjMult,4)}`},
+        {lb:'企业整体价值 EV = 修正乘数×EBITDA',fx:`${fmt(adjMult,4)}×${fmt(v.ebitda,0)} = ${fmt(ev,2)} 万元`},
+        {lb:'股权价值 = EV − 付息债务',fx:`${fmt(ev,2)} − ${fmt(v.debt,0)} = ${fmt(equity,2)} 万元`},
+        {lb:`按${v.share}%持股 × (1−${v.disc}%流动性折扣)`,fx:`${fmt(equity,2)}×${v.share}%×(1−${v.disc}%) = ${fmt(val,2)} 万元`},
+      ]};
+    },
+    note:'真题原型 · 2021实务二综合1：上市公司比较法市值已含少数股权，故只减流动性折扣，不减控制权折扣。'
+  },
+};
+let curCalc='capm';
+function renderCalcPicker(){
+  document.getElementById('calcPicker').innerHTML=Object.entries(CALCS).map(([k,c])=>
+    `<button data-c="${k}" class="${k===curCalc?'active':''}">${c.name}</button>`).join('');
+  document.querySelectorAll('#calcPicker button').forEach(b=>b.onclick=()=>{curCalc=b.dataset.c;renderCalcPicker();renderCalcBody();});
+}
+function renderCalcBody(){
+  const c=CALCS[curCalc];
+  let h=`<p class="desc">${c.desc}</p>
+    <div class="formula-note"><b>公式：</b><span style="font-family:monospace">${c.formula}</span></div>
+    <div class="grid2" style="margin-top:14px">`;
+  c.fields.forEach(f=>{h+=`<div><label class="f">${f.label}</label>
+    <input type="number" step="any" id="c_${f.id}" value="${f.val}"></div>`;});
+  h+=`</div><div style="margin-top:16px"><button class="btn primary" id="doCalc">计算并展开推导</button></div>
+    <div id="calcResult"></div>`;
+  document.getElementById('calcBody').innerHTML=h;
+  document.getElementById('doCalc').onclick=runCalc;
+  runCalc();
+}
+function runCalc(){
+  const c=CALCS[curCalc], v={};
+  let bad=false;
+  c.fields.forEach(f=>{const x=num('c_'+f.id);if(x===null)bad=true;v[f.id]=x;});
+  if(bad){document.getElementById('calcResult').innerHTML='<div class="result" style="background:var(--err-soft);border-color:#f0c2c2;color:var(--err)">请填写所有参数（数值）。</div>';return;}
+  const r=c.calc(v);
+  document.getElementById('calcResult').innerHTML=
+    `<div class="result"><div class="big">${r.main}<small>${r.unit}</small></div>
+      ${stepHTML(r.steps)}
+      <div class="formula-note">💡 ${c.note}</div></div>`;
+}
+
+/* ============ 题库模块 ============ */
+const uniq=(arr)=>[...new Set(arr)];
+function fillSelect(id,opts,first){
+  document.getElementById(id).innerHTML=`<option value="">${first}</option>`+opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+}
+function initBankFilters(){
+  fillSelect('fSubject',uniq(QUESTIONS.map(q=>q.subject)),'全部科目');
+  fillSelect('fYear',uniq(QUESTIONS.map(q=>q.year)).sort(),'全部年份');
+  fillSelect('fType',uniq(QUESTIONS.map(q=>q.type)),'全部题型');
+  fillSelect('fTopic',uniq(QUESTIONS.flatMap(q=>q.topics||[])).sort(),'全部考点');
+  ['fSubject','fYear','fType','fTopic','fScope'].forEach(id=>document.getElementById(id).onchange=renderBank);
+  document.getElementById('mShuffle').onclick=()=>{bankShuffle=!bankShuffle;renderBank();};
+  document.getElementById('mReset').onclick=()=>{if(confirm('确定清空全部作答记录？')){answers={};saveAns();renderBank();}};
+}
+let bankShuffle=false;
+function filterQuestions(){
+  const s=document.getElementById('fSubject').value, y=document.getElementById('fYear').value,
+    t=document.getElementById('fType').value, tp=document.getElementById('fTopic').value,
+    sc=document.getElementById('fScope').value;
+  let list=QUESTIONS.filter(q=>
+    (!s||q.subject===s)&&(!y||q.year==y)&&(!t||q.type===t)&&(!tp||(q.topics||[]).includes(tp)));
+  if(sc==='wrong')list=list.filter(q=>answers[q.id]&&!answers[q.id].correct);
+  if(sc==='undone')list=list.filter(q=>!answers[q.id]);
+  if(bankShuffle)list=[...list].sort(()=>Math.random()-.5);
+  return list;
+}
+function renderBank(){
+  const list=filterQuestions();
+  const done=list.filter(q=>answers[q.id]).length;
+  const right=list.filter(q=>answers[q.id]&&answers[q.id].correct).length;
+  document.getElementById('bankStats').innerHTML=`
+    <div class="stat"><div class="n">${list.length}</div><div class="l">筛选题数</div></div>
+    <div class="stat"><div class="n">${done}</div><div class="l">已作答</div></div>
+    <div class="stat"><div class="n">${right}</div><div class="l">答对</div></div>
+    <div class="stat"><div class="n">${done?fmt(right/done*100,0):0}%</div><div class="l">正确率</div></div>`;
+  const box=document.getElementById('bankList');
+  if(!list.length){box.innerHTML='<div class="empty">没有符合条件的题目，换个筛选试试。</div>';return;}
+  box.innerHTML=list.map(q=>qCardHTML(q)).join('');
+  list.forEach(q=>bindQ(q));
+}
+function qCardHTML(q){
+  const a=answers[q.id];
+  const meta=`<div class="meta"><span class="tag y">${q.year}</span><span class="tag">${q.subject}</span>
+    <span class="tag t">${q.type}</span>${(q.topics||[]).slice(0,4).map(t=>`<span class="tag tp">${t}</span>`).join('')}</div>`;
+  let body;
+  if(q.type==='综合'){
+    body=`<div class="stem">${esc(q.stem)}</div>
+      <button class="btn ghost sm" data-toggle="${q.id}">${a?'查看解析/答案':'展开参考答案'}</button>
+      <div class="analysis ${a?'show':''}" id="an_${q.id}"><div class="ans">参考答案要点</div>${esc(q.answer)}${q.analysis?('\n\n'+esc(q.analysis)):''}</div>`;
+  }else{
+    const opts=(q.options||[]).map(o=>{
+      const letter=o.trim()[0];
+      let cls='opt';
+      if(a){
+        const correctSet=q.answer.replace(/[^A-E]/g,'');
+        const pickedSet=(a.picked||'');
+        if(correctSet.includes(letter))cls+=' right';
+        else if(pickedSet.includes(letter))cls+=' wrong';
+      }
+      return `<button class="${cls}" data-q="${q.id}" data-l="${letter}">${esc(o)}</button>`;
+    }).join('');
+    body=`<div class="stem">${esc(q.stem)}</div>${opts}
+      <div class="actions">${q.type==='多选'?`<button class="btn primary sm" data-submit="${q.id}">提交多选</button>`:''}
+      <button class="btn ghost sm" data-toggle="${q.id}">解析</button></div>
+      <div class="analysis ${a?'show':''}" id="an_${q.id}"><div class="ans">正确答案：${esc(q.answer)}</div>${esc(q.analysis||'')}</div>`;
+  }
+  return `<div class="q" id="q_${q.id}">${meta}${body}</div>`;
+}
+let multiPick={}; // id->Set
+function bindQ(q){
+  const toggle=document.querySelector(`[data-toggle="${q.id}"]`);
+  if(toggle)toggle.onclick=()=>document.getElementById('an_'+q.id).classList.toggle('show');
+  if(q.type==='单选'){
+    document.querySelectorAll(`[data-q="${q.id}"]`).forEach(btn=>btn.onclick=()=>{
+      if(answers[q.id])return;
+      const letter=btn.dataset.l, correct=q.answer.replace(/[^A-E]/g,'');
+      answers[q.id]={picked:letter,correct:correct.includes(letter)};saveAns();
+      renderBank();
+    });
+  }else if(q.type==='多选'){
+    multiPick[q.id]=multiPick[q.id]||new Set();
+    document.querySelectorAll(`[data-q="${q.id}"]`).forEach(btn=>btn.onclick=()=>{
+      if(answers[q.id])return;
+      const l=btn.dataset.l;
+      if(multiPick[q.id].has(l)){multiPick[q.id].delete(l);btn.classList.remove('sel');}
+      else{multiPick[q.id].add(l);btn.classList.add('sel');}
+    });
+    const sub=document.querySelector(`[data-submit="${q.id}"]`);
+    if(sub)sub.onclick=()=>{
+      if(answers[q.id])return;
+      const picked=[...multiPick[q.id]].sort().join('');
+      const correct=q.answer.replace(/[^A-E]/g,'').split('').sort().join('');
+      answers[q.id]={picked,correct:picked===correct};saveAns();renderBank();
+    };
+  }
+}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+/* ============ 模考模块 ============ */
+let examState=null, examTimer=null;
+function initExam(){
+  fillSelect('eSubject',uniq(QUESTIONS.map(q=>q.subject)),'全部科目');
+  document.getElementById('examStart').onclick=startExam;
+}
+function startExam(){
+  const s=document.getElementById('eSubject').value;
+  const cnt=parseInt(document.getElementById('eCount').value);
+  const mins=parseInt(document.getElementById('eTime').value);
+  const scope=document.getElementById('eScope').value;
+  let pool=QUESTIONS.filter(q=>(!s||q.subject===s));
+  if(scope==='objonly')pool=pool.filter(q=>q.type!=='综合');
+  pool=[...pool].sort(()=>Math.random()-.5).slice(0,cnt);
+  if(!pool.length){alert('题目不足，换个条件');return;}
+  examState={questions:pool,picks:{},end:Date.now()+mins*60000,submitted:false};
+  document.getElementById('examSetup').style.display='none';
+  document.getElementById('examRun').style.display='block';
+  renderExam();
+  examTimer=setInterval(tickExam,1000);
+}
+function tickExam(){
+  if(!examState||examState.submitted)return;
+  const left=examState.end-Date.now();
+  if(left<=0){submitExam();return;}
+  const m=Math.floor(left/60000),sec=Math.floor(left%60000/1000);
+  const el=document.getElementById('examClock');
+  if(el)el.textContent=`${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+}
+function renderExam(){
+  const st=examState;
+  let h=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px">
+    <h2>模考进行中 · 共 ${st.questions.length} 题</h2>
+    <div><span class="badge" style="font-size:16px">⏱ <span id="examClock">--:--</span></span>
+    <button class="btn primary sm" id="examSubmit" style="margin-left:8px">交卷</button></div></div>
+    <div class="progress"><div id="examProg"></div></div></div>`;
+  st.questions.forEach((q,i)=>{
+    const opts=(q.type==='综合')?`<div class="analysis show"><div class="ans">（综合题·模考中不判分，交卷后可看要点）</div></div>`:
+      (q.options||[]).map(o=>{const l=o.trim()[0];
+        const sel=(st.picks[q.id]||'').includes(l)?'sel':'';
+        return `<button class="opt ${sel}" data-eq="${q.id}" data-el="${l}">${esc(o)}</button>`;}).join('');
+    h+=`<div class="q"><div class="meta"><span class="tag">${i+1}/${st.questions.length}</span>
+      <span class="tag t">${q.type}</span><span class="tag y">${q.year} ${q.subject}</span></div>
+      <div class="stem">${esc(q.stem)}</div>${opts}</div>`;
+  });
+  document.getElementById('examRun').innerHTML=h;
+  document.getElementById('examSubmit').onclick=()=>{if(confirm('确定交卷？'))submitExam();};
+  st.questions.forEach(q=>{
+    document.querySelectorAll(`[data-eq="${q.id}"]`).forEach(b=>b.onclick=()=>{
+      if(examState.submitted)return;
+      let cur=new Set((st.picks[q.id]||'').split('').filter(Boolean));
+      const l=b.dataset.el;
+      if(q.type==='单选')cur=new Set([l]);
+      else{cur.has(l)?cur.delete(l):cur.add(l);}
+      st.picks[q.id]=[...cur].sort().join('');
+      renderExamPicks();
+    });
+  });
+  updateProg();
+}
+function renderExamPicks(){
+  const st=examState;
+  document.querySelectorAll('[data-eq]').forEach(b=>{
+    const id=b.dataset.eq,l=b.dataset.el;
+    b.classList.toggle('sel',(st.picks[id]||'').includes(l));
+  });
+  updateProg();
+}
+function updateProg(){
+  const st=examState;const done=Object.keys(st.picks).length;
+  const el=document.getElementById('examProg');if(el)el.style.width=(done/st.questions.length*100)+'%';
+}
+function submitExam(){
+  clearInterval(examTimer);
+  const st=examState;st.submitted=true;
+  let right=0,total=0;
+  st.questions.forEach(q=>{
+    if(q.type==='综合')return;
+    total++;
+    const picked=(st.picks[q.id]||'').split('').sort().join('');
+    const correct=q.answer.replace(/[^A-E]/g,'').split('').sort().join('');
+    const ok=picked===correct;
+    if(ok)right++;
+    answers[q.id]={picked,correct:ok};
+  });
+  saveAns();
+  const score=total?Math.round(right/total*100):0;
+  // 按考点统计错题
+  const wrongTopics={};
+  st.questions.forEach(q=>{
+    if(q.type==='综合')return;
+    const picked=(st.picks[q.id]||'').split('').sort().join('');
+    const correct=q.answer.replace(/[^A-E]/g,'').split('').sort().join('');
+    if(picked!==correct)(q.topics||[]).forEach(t=>wrongTopics[t]=(wrongTopics[t]||0)+1);
+  });
+  const weakList=Object.entries(wrongTopics).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  let report=`<div class="card scorecard">
+    <div class="l" style="color:var(--sub)">客观题得分</div>
+    <div class="score">${score}<small style="font-size:20px">分</small></div>
+    <div class="sub">答对 ${right}/${total} 题 · ${score>=60?'<span style="color:var(--ok)">达到及格线 👍</span>':'<span style="color:var(--err)">继续加油</span>'}</div>`;
+  if(weakList.length)report+=`<div style="margin-top:16px;text-align:left">
+    <b style="font-size:14px">薄弱考点（错题分布）：</b><br>${weakList.map(([t,n])=>`<span class="pill">${t} ×${n}</span>`).join('')}</div>`;
+  report+=`<div style="margin-top:18px"><button class="btn primary" onclick="location.reload()">再考一次</button>
+    <button class="btn ghost" id="showAnswers">查看逐题解析</button></div></div>`;
+  document.getElementById('examRun').insertAdjacentHTML('afterbegin',report);
+  // 逐题显示对错
+  st.questions.forEach(q=>{
+    document.querySelectorAll(`[data-eq="${q.id}"]`).forEach(b=>{
+      const l=b.dataset.el, correct=q.answer.replace(/[^A-E]/g,'');
+      const picked=st.picks[q.id]||'';
+      if(correct.includes(l))b.classList.add('right');
+      else if(picked.includes(l))b.classList.add('wrong');
+    });
+  });
+  document.getElementById('showAnswers').onclick=()=>{
+    st.questions.forEach(q=>{
+      const card=[...document.querySelectorAll('#examRun .q')].find(c=>c.querySelector(`[data-eq="${q.id}"]`)||c.textContent.includes(q.stem.slice(0,20)));
+    });
+    // 简化：直接在每题下追加解析
+    document.querySelectorAll('#examRun .q').forEach((card,idx)=>{
+      const q=st.questions[idx];if(!q||card.querySelector('.analysis-added'))return;
+      const div=document.createElement('div');div.className='analysis show analysis-added';
+      div.innerHTML=`<div class="ans">正确答案：${esc(q.answer)}</div>${esc(q.analysis||'')}`;
+      card.appendChild(div);
+    });
+    document.getElementById('showAnswers').style.display='none';
+  };
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ============ 热力图 ============ */
+let curHeat='实务二';
+function drawHeat(){
+  const stats={};
+  QUESTIONS.filter(q=>q.subject===curHeat).forEach(q=>(q.topics||[]).forEach(t=>stats[t]=(stats[t]||0)+1));
+  const arr=Object.entries(stats).sort((a,b)=>a[1]-b[1]);
+  const chart=echarts.init(document.getElementById('heatChart'));
+  const max=Math.max(...arr.map(a=>a[1]),1);
+  chart.setOption({
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    grid:{left:110,right:40,top:20,bottom:30},
+    xAxis:{type:'value',axisLine:{lineStyle:{color:'#c8cdd8'}},splitLine:{lineStyle:{color:'#eef1f6'}}},
+    yAxis:{type:'category',data:arr.map(a=>a[0]),axisLine:{lineStyle:{color:'#c8cdd8'}},axisLabel:{color:'#5b6472'}},
+    series:[{type:'bar',data:arr.map(a=>({value:a[1],
+      itemStyle:{color:new echarts.graphic.LinearGradient(0,0,1,0,[
+        {offset:0,color:'#aecbff'},{offset:1,color:`rgba(42,91,215,${0.4+0.6*a[1]/max})`}]),
+        borderRadius:[0,6,6,0]}})),
+      barMaxWidth:22,label:{show:true,position:'right',color:'#5b6472',fontSize:11}}]
+  });
+  chart.resize();
+}
+function drawYear(){
+  const years=uniq(QUESTIONS.map(q=>q.year)).sort();
+  const types=['单选','多选','综合'];
+  const colors={'单选':'#2a5bd7','多选':'#1f9d55','综合':'#d9822b'};
+  const chart=echarts.init(document.getElementById('yearChart'));
+  chart.setOption({
+    tooltip:{trigger:'axis',axisPointer:{type:'shadow'}},
+    legend:{data:types,top:0,textStyle:{color:'#5b6472'}},
+    grid:{left:40,right:30,top:36,bottom:30},
+    xAxis:{type:'category',data:years.map(y=>y+'年'),axisLine:{lineStyle:{color:'#c8cdd8'}},axisLabel:{color:'#5b6472'}},
+    yAxis:{type:'value',axisLine:{lineStyle:{color:'#c8cdd8'}},splitLine:{lineStyle:{color:'#eef1f6'}}},
+    series:types.map(t=>({name:t,type:'bar',stack:'x',emphasis:{focus:'series'},
+      itemStyle:{color:colors[t]},
+      data:years.map(y=>QUESTIONS.filter(q=>q.year===y&&q.type===t).length)}))
+  });
+  chart.resize();
+}
+document.querySelectorAll('[data-heat]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('[data-heat]').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');curHeat=b.dataset.heat;drawHeat();
+});
+window.addEventListener('resize',()=>{
+  if(document.getElementById('view-heat').classList.contains('active')){drawHeat();drawYear();}
+});
+
+/* ============ 初始化 ============ */
+renderCalcPicker();renderCalcBody();
+initBankFilters();renderBank();
+initExam();
+setTimeout(()=>{drawHeat();drawYear();},80);
+</script>
+</body>
+</html>
